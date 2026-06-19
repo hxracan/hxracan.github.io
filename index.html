@@ -6,7 +6,7 @@
     <title>huracan | bio</title>
     <!-- FontAwesome for the social icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts for the wide cyber aesthetic font -->
+    <!-- Google Fonts for Michroma -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
@@ -17,41 +17,61 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Michroma', sans-serif; /* Applied the wide font globally */
+            font-family: 'Michroma', sans-serif;
             user-select: none;
         }
 
         body, html {
             background-color: #000;
+            width: 100%;
             height: 100%;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
         }
 
-        /* === FULLSCREEN BLURRED VIDEO BACKGROUND === */
+        /* === TRULY FULLSCREEN VIDEO BACKGROUND === */
         .bg-video {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
-            min-width: 100%;
-            min-height: 100%;
+            width: 100vw;
+            height: 100vh;
             z-index: -100;
-            object-fit: cover;
-            filter: blur(10px) brightness(0.4); /* Matched the blur and darkness from the image */
+            object-fit: cover; /* Forces the video to cover all edges with no black bars */
+            filter: blur(8px) brightness(0.4);
         }
 
-        /* === HEAVY DOT MATRIX OVERLAY === */
-        .bg-pattern {
+        /* === TV STATIC & SCANLINE EFFECT === */
+        .tv-static {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-image: radial-gradient(rgba(0, 0, 0, 0.8) 3px, transparent 3.5px);
-            background-size: 12px 12px;
+            /* SVG Noise encoded as background */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.08; 
             z-index: -50;
             pointer-events: none;
+            animation: staticNoise 0.2s infinite;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15));
+            background-size: 100% 4px;
+            z-index: -49;
+            pointer-events: none;
+        }
+
+        @keyframes staticNoise {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-1px, -1px); }
+            30% { transform: translate(1px, 1px); }
+            50% { transform: translate(-2px, 1px); }
+            70% { transform: translate(1px, -1px); }
+            90% { transform: translate(-1px, 2px); }
         }
 
         /* === ENTRY SCREEN (BLACK + SNOW) === */
@@ -70,7 +90,7 @@
         #entry-text {
             color: #ffffff;
             font-size: 1.2rem;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
             z-index: 10;
             animation: pulse 2s infinite;
         }
@@ -84,32 +104,45 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            50% { opacity: 0.4; text-shadow: none; }
         }
 
-        /* === MAIN CONTAINER === */
-        .wrapper {
+        /* === MAIN CONTAINER (PERSPECTIVE FOR 3D TILT) === */
+        .perspective-wrapper {
+            perspective: 1200px; /* Depth for the 3D effect */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        /* The actual element that tilts */
+        .tilt-card-group {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 15px; /* Tighter gap matching the image */
+            gap: 15px;
             width: 100%;
-            max-width: 450px; /* Slimmer max-width to match image proportions */
-            padding: 20px;
-            z-index: 10;
+            max-width: 520px; /* Made the card slightly wider */
+            transform-style: preserve-3d;
+            transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth catching up to mouse */
         }
 
         /* Main Bio Card */
         .main-card {
-            background: rgba(10, 10, 10, 0.85);
-            border-radius: 18px;
+            background: rgba(12, 12, 12, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
             width: 100%;
-            padding: 30px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9);
+            padding: 35px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 22px;
+            transform: translateZ(20px); /* Lifts the card content slightly off the background */
         }
 
         /* Header Layout: Profile Picture & Name */
@@ -122,8 +155,9 @@
         /* Profile Container with Anime Accents */
         .pfp-container {
             position: relative;
-            width: 75px;
-            height: 75px;
+            width: 80px;
+            height: 80px;
+            transform: translateZ(30px); /* 3D pop effect for PFP */
         }
 
         .pfp-image {
@@ -131,15 +165,16 @@
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #222;
+            border: 2px solid rgba(255,255,255,0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
         .pfp-container::before {
             content: '';
             position: absolute;
-            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            top: -5px; left: -5px; right: -5px; bottom: -5px;
             border-radius: 50%;
-            border: 1px dashed rgba(255, 0, 0, 0.5);
+            border: 1px dashed rgba(255, 0, 0, 0.6);
             animation: spin 20s linear infinite;
             pointer-events: none;
         }
@@ -150,115 +185,125 @@
             position: absolute;
             top: -8px; right: -8px;
             color: #ff2a2a;
-            font-size: 1.1rem;
-            text-shadow: 0 0 8px rgba(255, 42, 42, 0.6);
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px rgba(255, 42, 42, 0.8);
             font-family: sans-serif;
         }
 
         .status-badge {
             position: absolute;
-            bottom: -2px; left: -2px;
+            bottom: 0px; left: -2px;
             background: #ffffff;
             color: #000000;
-            width: 20px; height: 20px;
+            width: 22px; height: 22px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 0.7rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            border: 2px solid #0e0e0e;
+            font-weight: 900; font-size: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.8);
             font-family: sans-serif;
         }
 
         /* Typography & Info */
         .username {
             color: #ffffff;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 600;
             letter-spacing: 1px;
             text-transform: lowercase;
+            text-shadow: 0 2px 10px rgba(255,255,255,0.2);
+            transform: translateZ(25px);
         }
 
         .pill-badge {
             align-self: flex-start;
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #ffffff;
-            padding: 4px 12px;
+            padding: 5px 14px;
             border-radius: 20px;
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             margin-top: -10px; margin-left: 2px;
             text-transform: lowercase;
             letter-spacing: 0.5px;
+            transform: translateZ(20px);
         }
 
         .info-text {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
             padding-left: 8px;
             text-align: center;
             margin-top: 5px;
+            transform: translateZ(15px);
         }
 
         /* Social Icons */
         .socials-row {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 18px;
             align-items: center;
             margin-top: 5px;
+            transform: translateZ(25px);
         }
 
         .social-icon {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.3rem;
             text-decoration: none;
-            transition: transform 0.2s ease, text-shadow 0.2s ease, color 0.2s ease;
+            transition: all 0.3s ease;
         }
 
-        .social-icon.steam:hover { color: #ffffff; text-shadow: 0 0 12px rgba(255,255,255,0.8); transform: scale(1.08); }
-        .social-icon.discord:hover { color: #5865F2; text-shadow: 0 0 12px rgba(88, 101, 242, 0.8); transform: scale(1.08); }
-        .social-icon.roblox:hover { color: #aaaaaa; text-shadow: 0 0 12px rgba(255, 255, 255, 0.5); transform: scale(1.08); }
-        .social-icon.tiktok:hover { color: #ff007f; text-shadow: 0 0 12px rgba(255, 0, 127, 0.8); transform: scale(1.08); }
-        .social-icon.telegram:hover { color: #0088cc; text-shadow: 0 0 12px rgba(0, 136, 204, 0.8); transform: scale(1.08); }
+        .social-icon:hover { transform: scale(1.15) translateY(-3px); }
+        .social-icon.steam:hover { color: #ffffff; text-shadow: 0 5px 15px rgba(255,255,255,0.6); }
+        .social-icon.discord:hover { color: #5865F2; text-shadow: 0 5px 15px rgba(88, 101, 242, 0.6); }
+        .social-icon.roblox:hover { color: #aaaaaa; text-shadow: 0 5px 15px rgba(255, 255, 255, 0.4); }
+        .social-icon.tiktok:hover { color: #ff007f; text-shadow: 0 5px 15px rgba(255, 0, 127, 0.6); }
+        .social-icon.telegram:hover { color: #0088cc; text-shadow: 0 5px 15px rgba(0, 136, 204, 0.6); }
 
         /* === DETACHED AUDIO PLAYER BAR === */
         .audio-player-container {
             width: 100%;
-            background: rgba(10, 10, 10, 0.85);
+            background: rgba(12, 12, 12, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border-radius: 30px;
-            padding: 10px 20px;
+            padding: 12px 25px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.9);
-            gap: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            gap: 18px;
+            transform: translateZ(20px);
         }
 
         .time-stamp { 
             color: rgba(255, 255, 255, 0.5); 
-            font-size: 0.6rem; 
+            font-size: 0.65rem; 
         }
 
         .timeline-bar {
             flex-grow: 1;
             height: 4px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             border-radius: 4px;
             position: relative;
+            cursor: pointer;
         }
 
         .timeline-progress {
             width: 0%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.85);
+            background: #ffffff;
             border-radius: 4px;
             position: relative;
-            box-shadow: 0 0 8px rgba(255,255,255,0.5);
+            box-shadow: 0 0 10px rgba(255,255,255,0.4);
             transition: width 0.1s linear;
         }
 
         .timeline-progress::after {
-            content: ''; position: absolute; right: -4px; top: -3px;
+            content: ''; position: absolute; right: -5px; top: -3px;
             width: 10px; height: 10px;
             background: #ffffff; border-radius: 50%;
             box-shadow: 0 0 10px rgba(255,255,255,0.9);
@@ -267,10 +312,10 @@
         .player-controls { display: flex; align-items: center; gap: 15px; }
         
         .control-btn {
-            background: none; border: none; color: rgba(255, 255, 255, 0.85);
-            font-size: 0.8rem; cursor: pointer; transition: color 0.2s;
+            background: none; border: none; color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
         }
-        .control-btn:hover { color: #ffffff; text-shadow: 0 0 8px rgba(255,255,255,0.6); }
+        .control-btn:hover { color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.8); transform: scale(1.1); }
 
     </style>
 </head>
@@ -281,8 +326,9 @@
         <source src="https://r2.fakecrime.bio/backgrounds/48d57112-2356-4d3b-805d-78022b612aae.mp4" type="video/mp4">
     </video>
 
-    <!-- Dot Matrix Overlay -->
-    <div class="bg-pattern"></div>
+    <!-- Static TV & Scanlines -->
+    <div class="tv-static"></div>
+    <div class="scanlines"></div>
 
     <!-- Entry Screen with Snow -->
     <div id="entry-overlay" onclick="startBioSite()">
@@ -293,56 +339,122 @@
     <!-- BACKGROUND MUSIC -->
     <audio id="bg-track" src="https://files.catbox.moe/wdh4ur.mp3" loop></audio>
 
-    <div class="wrapper">
-        
-        <div class="main-card">
+    <div class="perspective-wrapper">
+        <div class="tilt-card-group" id="tilt-element">
             
-            <div class="profile-header">
-                <div class="pfp-container">
-                    <!-- Avatar Link -->
-                    <img class="pfp-image" src="https://r2.fakecrime.bio/avatars/6dcd825e-eadc-4568-8ee3-d92919f7f72a.webp" alt="huracan">
-                    <div class="anime-vein">💢</div>
-                    <div class="status-badge">!</div>
+            <div class="main-card">
+                <div class="profile-header">
+                    <div class="pfp-container">
+                        <img class="pfp-image" src="https://r2.fakecrime.bio/avatars/6dcd825e-eadc-4568-8ee3-d92919f7f72a.webp" alt="huracan">
+                        <div class="anime-vein">💢</div>
+                        <div class="status-badge">!</div>
+                    </div>
+                    <div class="username">huracan</div>
                 </div>
-                <div class="username">huracan</div>
+
+                <div class="pill-badge">huracan</div>
+                <div class="info-text">German</div>
+
+                <div class="socials-row">
+                    <a href="https://steamcommunity.com/profiles/76561199426708994/" target="_blank" class="social-icon steam"><i class="fab fa-steam"></i></a>
+                    <a href="https://discordapp.com/users/622889081097158711" target="_blank" class="social-icon discord"><i class="fab fa-discord"></i></a>
+                    <a href="https://www.roblox.com/users/1286354240/profile" target="_blank" class="social-icon roblox"><i class="fas fa-cube"></i></a>
+                    <a href="https://tiktok.com/@odrcz" target="_blank" class="social-icon tiktok"><i class="fab fa-tiktok"></i></a>
+                    <a href="https://t.me/nothuracan" target="_blank" class="social-icon telegram"><i class="fab fa-telegram-plane"></i></a>
+                </div>
             </div>
 
-            <div class="pill-badge">huracan</div>
-            <div class="info-text">German</div>
-
-            <div class="socials-row">
-                <a href="https://steamcommunity.com/profiles/76561199426708994/" target="_blank" class="social-icon steam"><i class="fab fa-steam"></i></a>
-                <a href="https://discordapp.com/users/622889081097158711" target="_blank" class="social-icon discord"><i class="fab fa-discord"></i></a>
-                <a href="https://www.roblox.com/users/1286354240/profile" target="_blank" class="social-icon roblox"><i class="fas fa-cube"></i></a>
-                <a href="https://tiktok.com/@odrcz" target="_blank" class="social-icon tiktok"><i class="fab fa-tiktok"></i></a>
-                <a href="https://t.me/nothuracan" target="_blank" class="social-icon telegram"><i class="fab fa-telegram-plane"></i></a>
+            <div class="audio-player-container">
+                <span class="time-stamp" id="current-time">0:00</span>
+                <div class="timeline-bar">
+                    <div class="timeline-progress" id="progress-bar"></div>
+                </div>
+                <span class="time-stamp" id="total-time">0:00</span>
+                
+                <div class="player-controls">
+                    <button class="control-btn" id="play-pause-toggle" onclick="toggleAudio()"><i class="fas fa-pause"></i></button>
+                    <button class="control-btn"><i class="fas fa-circle"></i></button>
+                </div>
             </div>
 
         </div>
-
-        <div class="audio-player-container">
-            <span class="time-stamp" id="current-time">0:00</span>
-            <div class="timeline-bar">
-                <div class="timeline-progress" id="progress-bar"></div>
-            </div>
-            <span class="time-stamp" id="total-time">0:00</span>
-            
-            <div class="player-controls">
-                <button class="control-btn" id="play-pause-toggle" onclick="toggleAudio()"><i class="fas fa-pause"></i></button>
-                <button class="control-btn"><i class="fas fa-circle"></i></button>
-            </div>
-        </div>
-
     </div>
 
-    <!-- JAVASCRIPT FOR SNOW & AUDIO -->
+    <!-- JAVASCRIPT -->
     <script>
+        // --- 3D TILT EFFECT ---
+        const tiltElement = document.getElementById('tilt-element');
+        
+        document.addEventListener('mousemove', (e) => {
+            // Calculate mouse position relative to the center of the screen
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 45; // Controls X-axis rotation sensitivity
+            const yAxis = (window.innerHeight / 2 - e.pageY) / -45; // Controls Y-axis rotation sensitivity
+            
+            tiltElement.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        // Reset tilt when mouse leaves the window
+        document.addEventListener('mouseleave', () => {
+            tiltElement.style.transform = `rotateY(0deg) rotateX(0deg)`;
+            tiltElement.style.transition = `transform 0.5s ease-out`;
+        });
+        
+        document.addEventListener('mouseenter', () => {
+            tiltElement.style.transition = `transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+        });
+
+        // --- AUDIO CONTROLS ---
         const track = document.getElementById('bg-track');
         const playPauseBtn = document.getElementById('play-pause-toggle');
         const progressBar = document.getElementById('progress-bar');
         const currentTimeEl = document.getElementById('current-time');
         const totalTimeEl = document.getElementById('total-time');
         let playing = false;
+
+        function startBioSite() {
+            const overlay = document.getElementById('entry-overlay');
+            const bgVid = document.getElementById('bg-vid-element');
+            
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.style.display = 'none'; }, 800);
+
+            bgVid.play().catch(e => console.log("Video autoplay prevented"));
+
+            track.volume = 0.35;
+            track.play().catch(err => console.log("Audio requires valid MP3 link."));
+            playing = true;
+        }
+
+        function toggleAudio() {
+            if (playing) {
+                track.pause();
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            } else {
+                track.play();
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            }
+            playing = !playing;
+        }
+
+        function formatTime(seconds) {
+            let min = Math.floor(seconds / 60);
+            let sec = Math.floor(seconds % 60);
+            if (sec < 10) sec = '0' + sec;
+            return `${min}:${sec}`;
+        }
+
+        track.addEventListener('timeupdate', () => {
+            if (track.duration) {
+                const progressPercent = (track.currentTime / track.duration) * 100;
+                progressBar.style.width = progressPercent + "%";
+                currentTimeEl.textContent = formatTime(track.currentTime);
+                totalTimeEl.textContent = formatTime(track.duration);
+            }
+        });
+
+        track.addEventListener('loadedmetadata', () => {
+            totalTimeEl.textContent = formatTime(track.duration);
+        });
 
         // --- SNOWFALL EFFECT FOR ENTRY SCREEN ---
         const canvas = document.getElementById('snow-canvas');
@@ -388,52 +500,6 @@
         window.addEventListener('resize', () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-        });
-
-        // --- SITE ENTRY & AUDIO LOGIC ---
-        function startBioSite() {
-            const overlay = document.getElementById('entry-overlay');
-            const bgVid = document.getElementById('bg-vid-element');
-            
-            overlay.style.opacity = '0';
-            setTimeout(() => { overlay.style.display = 'none'; }, 800);
-
-            bgVid.play().catch(e => console.log("Video autoplay prevented"));
-
-            track.volume = 0.35;
-            track.play().catch(err => console.log("Audio requires valid MP3 link."));
-            playing = true;
-        }
-
-        function toggleAudio() {
-            if (playing) {
-                track.pause();
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            } else {
-                track.play();
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            }
-            playing = !playing;
-        }
-
-        function formatTime(seconds) {
-            let min = Math.floor(seconds / 60);
-            let sec = Math.floor(seconds % 60);
-            if (sec < 10) sec = '0' + sec;
-            return `${min}:${sec}`;
-        }
-
-        track.addEventListener('timeupdate', () => {
-            if (track.duration) {
-                const progressPercent = (track.currentTime / track.duration) * 100;
-                progressBar.style.width = progressPercent + "%";
-                currentTimeEl.textContent = formatTime(track.currentTime);
-                totalTimeEl.textContent = formatTime(track.duration);
-            }
-        });
-
-        track.addEventListener('loadedmetadata', () => {
-            totalTimeEl.textContent = formatTime(track.duration);
         });
     </script>
 </body>
