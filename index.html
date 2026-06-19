@@ -3,56 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Name</title>
+    <title>huracan | bio</title>
+    <!-- FontAwesome for the social icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; cursor: url('https://cur.cursors-4u.net/games/gam-4/gam372.cur'), auto; }
-        body, html { background-color: #0b0b0b; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        
-        /* Blur overlay for autoplay bypass */
-        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px); z-index: 999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-        #overlay button { background: none; border: 1px solid #7f00ff; color: #fff; padding: 15px 40px; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px; transition: 0.3s; box-shadow: 0 0 15px rgba(127, 0, 255, 0.4); }
-        #overlay button:hover { background: #7f00ff; box-shadow: 0 0 25px rgba(127, 0, 255, 0.8); }
+        /* === RESET & SYSTEM STYLING === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body, html {
+            background-color: #111111;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* === CRT SCANLINE / GRAIN OVERLAY === */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Subtle dark moving background glow */
+        .bg-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1e1e1e 0%, #0a0a0a 100%);
+            z-index: -1;
+        }
+
+        /* === SITE CLICK ENTRY OVERLAY === */
+        #entry-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #090909;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+
+        /* === MAIN CONTAINER (MATCHING image_1e62c9.png) === */
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 540px;
+            padding: 20px;
+        }
 
         /* Main Bio Card */
-        .profile-card { background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 40px; width: 380px; text-align: center; backdrop-filter: blur(8px); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
-        .avatar { width: 110px; height: 110px; border-radius: 50%; border: 2px solid #7f00ff; box-shadow: 0 0 20px rgba(127, 0, 255, 0.5); object-fit: cover; }
-        h1 { margin-top: 15px; font-size: 1.8rem; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        .tag { font-size: 0.85rem; color: #7f00ff; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1.5px; }
+        .main-card {
+            background: rgba(14, 14, 14, 0.85);
+            border-radius: 18px;
+            width: 100%;
+            padding: 35px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Header Layout: Profile Picture & Name side-by-side */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Profile Container with Red Accent Marks */
+        .pfp-container {
+            position: relative;
+            width: 85px;
+            height: 85px;
+        }
+
+        .pfp-image {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #222;
+        }
+
+        /* Red circular decorative rings mimicking the custom border */
+        .pfp-container::before {
+            content: '';
+            position: absolute;
+            top: -5px; left: -5px; right: -5px; bottom: -5px;
+            border-radius: 50%;
+            border: 1px dashed rgba(255, 0, 0, 0.4);
+            animation: spin 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* The Custom Anime Vein (💢) indicator graphic placement */
+        .anime-vein {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            color: #ff2a2a;
+            font-size: 1.3rem;
+            text-shadow: 0 0 8px rgba(255, 42, 42, 0.6);
+        }
+
+        /* Status Badge Overlay (❗️) */
+        .status-badge {
+            position: absolute;
+            bottom: 0;
+            left: -2px;
+            background: #ffffff;
+            color: #000000;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            border: 2px solid #0e0e0e;
+        }
+
+        /* Username styling */
+        .username {
+            color: #ffffff;
+            font-size: 1.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
+
+        /* Sub-badge pill below profile image */
+        .pill-badge {
+            align-self: flex-start;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: -5px;
+            margin-left: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Center Row Info (German) */
+        .info-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            text-align: left;
+            padding-left: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Social Icons Row Grid & Soft Glowing Interactions */
+        .socials-row {
+            display: flex;
+            gap: 20px;
+            padding-left: 8px;
+            align-items: center;
+        }
+
+        .social-icon {
+            color: #ffffff;
+            font-size: 1.45rem;
+            text-decoration: none;
+            transition: transform 0.2s ease, text-shadow 0.2s ease, color 0.2s ease;
+        }
+
+        /* Match specific glows from image_1e62c9.png */
+        .social-icon.steam:hover { color: #ffffff; text-shadow: 0 0 12px rgba(255,255,255,0.8); transform: scale(1.08); }
+        .social-icon.discord:hover { color: #5865F2; text-shadow: 0 0 12px rgba(88, 101, 242, 0.8); transform: scale(1.08); }
+        .social-icon.roblox:hover { color: #aaaaaa; text-shadow: 0 0 12px rgba(255, 255, 255, 0.5); transform: scale(1.08); }
+        .social-icon.tiktok:hover { color: #ff007f; text-shadow: 0 0 12px rgba(255, 0, 127, 0.8); transform: scale(1.08); }
+        .social-icon.telegram:hover { color: #0088cc; text-shadow: 0 0 12px rgba(0, 136, 204, 0.8); transform: scale(1.08); }
+
+        /* === DETACHED AUDIO PLAYER BAR (BOTTOM OF image_1e62c9.png) === */
+        .audio-player-container {
+            width: 100%;
+            background: rgba(14, 14, 14, 0.85);
+            border-radius: 30px;
+            padding: 12px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            gap: 15px;
+        }
+
+        .time-stamp {
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* Custom Track Timeline layout */
+        .timeline-bar {
+            flex-grow: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .timeline-progress {
+            width: 78%; /* Matched progress location visual from picture */
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 4px;
+            position: relative;
+            box-shadow: 0 0 8px rgba(255,255,255,0.5);
+        }
+
+        /* Timeline Knob handle */
+        .timeline-progress::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: -4px;
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255,255,255,0.9);
+        }
+
+        /* Media Controls layout */
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: color 0.2s, text-shadow 0.2s;
+        }
         
-        /* Links style */
-        .links { display: flex; flex-direction: column; gap: 12px; }
-        .link-btn { display: block; background: rgba(30, 30, 30, 0.5); border: 1px solid rgba(255,255,255,0.05); padding: 12px; color: #ccc; text-decoration: none; border-radius: 6px; transition: 0.2s; font-size: 0.95rem; }
-        .link-btn:hover { background: rgba(127, 0, 255, 0.15); border-color: #7f00ff; color: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(127,0,255,0.2); }
+        .control-btn:hover {
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255,255,255,0.6);
+        }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <button onclick="enterSite()">Enter</button>
+    <div class="bg-glow"></div>
+
+    <!-- Click Entry overlay to bypass browser auto-play locks -->
+    <div id="entry-overlay" onclick="startBioSite()">
+        [ CLICK TO ENTER ]
     </div>
 
-    <!-- Audio Element (Add direct .mp3 link or discord attachment link here) -->
-    <audio id="bg-music" src="YOUR_DIRECT_MP3_LINK_HERE" loop></audio>
+    <!-- Background Music Link (Using a free default cyber track; Swap out as desired) -->
+    <audio id="bg-track" src="https://files.catbox.moe/g2v77k.mp3" loop></audio>
 
-    <div class="profile-card">
-        <img class="avatar" src="YOUR_AVATAR_IMAGE_URL" alt="PFP">
-        <h1>YourName</h1>
-        <div class="tag">developer // gamer</div>
+    <div class="wrapper">
         
-        <div class="links">
-            <a href="https://discord.com" target="_blank" class="link-btn">Discord</a>
-            <a href="https://github.com" target="_blank" class="link-btn">GitHub</a>
-            <a href="https://twitter.com" target="_blank" class="link-btn">Twitter</a>
+        <!-- MAIN PROFILE CARD -->
+        <div class="main-card">
+            
+            <!-- Avatar Section -->
+            <div class="profile-header">
+                <div class="pfp-container">
+                    <!-- Embeds your pfp directly from image_1e635d.png -->
+                    <img class="pfp-image" src="https://i.imgur.com/vHq0L9H.png" alt="huracan">
+                    <div class="anime-vein">💢</div>
+                    <div class="status-badge">!</div>
+                </div>
+                
+                <div class="username">huracan</div>
+            </div>
+
+            <!-- Custom text pill badge -->
+            <div class="pill-badge">huracan</div>
+
+            <!-- Regional Tag -->
+            <div class="info-text">German</div>
+
+            <!-- Dynamic Social Icon Rows linked directly to your handles -->
+            <div class="socials-row">
+                <a href="https://steamcommunity.com/profiles/76561199426708994/" target="_blank" class="social-icon steam" title="Steam">
+                    <i class="fab fa-steam"></i>
+                </a>
+                <a href="https://discordapp.com/users/622889081097158711" target="_blank" class="social-icon discord" title="Discord">
+                    <i class="fab fa-discord"></i>
+                </a>
+                <a href="https://www.roblox.com/users/1286354240/profile" target="_blank" class="social-icon roblox" title="Roblox">
+                    <i class="fas fa-cube"></i>
+                </a>
+                <a href="#" target="_blank" class="social-icon tiktok" title="TikTok">
+                    <i class="fab fa-tiktok"></i>
+                </a>
+                <a href="https://t.me/nothuracan" target="_blank" class="social-icon telegram" title="Telegram">
+                    <i class="fab fa-telegram-plane"></i>
+                </a>
+            </div>
+
         </div>
+
+        <!-- DETACHED MUSIC PLAYER BAR -->
+        <div class="audio-player-container">
+            <span class="time-stamp">02:20</span>
+            
+            <div class="timeline-bar">
+                <div class="timeline-progress"></div>
+            </div>
+            
+            <span class="time-stamp">02:35</span>
+            
+            <div class="player-controls">
+                <button class="control-btn" id="play-pause-toggle" onclick="toggleAudio()"><i class="fas fa-pause"></i></button>
+                <button class="control-btn"><i class="fas fa-circle"></i></button>
+            </div>
+        </div>
+
     </div>
 
+    <!-- JAVASCRIPT LOGIC ENGINE -->
     <script>
-        function enterSite() {
-            document.getElementById('overlay').style.opacity = '0';
-            setTimeout(() => document.getElementById('overlay').style.display = 'none', 500);
-            const music = document.getElementById('bg-music');
-            music.volume = 0.3; // Set volume to 30%
-            music.play();
+        const track = document.getElementById('bg-track');
+        const playPauseBtn = document.getElementById('play-pause-toggle');
+        let playing = false;
+
+        function startBioSite() {
+            const overlay = document.getElementById('entry-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+
+            track.volume = 0.35; // Standard sound initialization normalization
+            track.play().catch(err => console.log("Autoplay context initialization skipped until action taken."));
+            playing = true;
+        }
+
+        function toggleAudio() {
+            if (playing) {
+                track.pause();
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            } else {
+                track.play();
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            }
+            playing = !playing;
         }
     </script>
 </body>
