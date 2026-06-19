@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>huracan | bio</title>
+    <!-- FontAwesome for the social icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts for the wide cyber aesthetic font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
     
     <style>
         /* === RESET & SYSTEM STYLING === */
@@ -12,7 +17,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Michroma', sans-serif; /* Applied the wide font globally */
             user-select: none;
         }
 
@@ -27,7 +32,7 @@
             position: relative;
         }
 
-        /* === FULLSCREEN VIDEO BACKGROUND === */
+        /* === FULLSCREEN BLURRED VIDEO BACKGROUND === */
         .bg-video {
             position: fixed;
             top: 0;
@@ -36,7 +41,17 @@
             min-height: 100%;
             z-index: -100;
             object-fit: cover;
-            opacity: 0.8; /* Slight dim so the card pops */
+            filter: blur(10px) brightness(0.4); /* Matched the blur and darkness from the image */
+        }
+
+        /* === HEAVY DOT MATRIX OVERLAY === */
+        .bg-pattern {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(rgba(0, 0, 0, 0.8) 3px, transparent 3.5px);
+            background-size: 12px 12px;
+            z-index: -50;
+            pointer-events: none;
         }
 
         /* === ENTRY SCREEN (BLACK + SNOW) === */
@@ -54,7 +69,7 @@
 
         #entry-text {
             color: #ffffff;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             letter-spacing: 3px;
             z-index: 10;
             animation: pulse 2s infinite;
@@ -78,25 +93,23 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px; /* Tighter gap matching the image */
             width: 100%;
-            max-width: 540px;
+            max-width: 450px; /* Slimmer max-width to match image proportions */
             padding: 20px;
             z-index: 10;
         }
 
         /* Main Bio Card */
         .main-card {
-            background: rgba(14, 14, 14, 0.75);
-            backdrop-filter: blur(8px);
+            background: rgba(10, 10, 10, 0.85);
             border-radius: 18px;
             width: 100%;
-            padding: 35px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9);
             display: flex;
             flex-direction: column;
-            gap: 25px;
-            border: 1px solid rgba(255,255,255,0.05);
+            gap: 20px;
         }
 
         /* Header Layout: Profile Picture & Name */
@@ -109,8 +122,8 @@
         /* Profile Container with Anime Accents */
         .pfp-container {
             position: relative;
-            width: 85px;
-            height: 85px;
+            width: 75px;
+            height: 75px;
         }
 
         .pfp-image {
@@ -124,9 +137,9 @@
         .pfp-container::before {
             content: '';
             position: absolute;
-            top: -5px; left: -5px; right: -5px; bottom: -5px;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
             border-radius: 50%;
-            border: 1px dashed rgba(255, 0, 0, 0.4);
+            border: 1px dashed rgba(255, 0, 0, 0.5);
             animation: spin 20s linear infinite;
             pointer-events: none;
         }
@@ -135,66 +148,74 @@
 
         .anime-vein {
             position: absolute;
-            top: -6px; right: -6px;
+            top: -8px; right: -8px;
             color: #ff2a2a;
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             text-shadow: 0 0 8px rgba(255, 42, 42, 0.6);
+            font-family: sans-serif;
         }
 
         .status-badge {
             position: absolute;
-            bottom: 0; left: -2px;
+            bottom: -2px; left: -2px;
             background: #ffffff;
             color: #000000;
-            width: 24px; height: 24px;
+            width: 20px; height: 20px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 0.85rem;
+            font-weight: bold; font-size: 0.7rem;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
             border: 2px solid #0e0e0e;
+            font-family: sans-serif;
         }
 
         /* Typography & Info */
         .username {
             color: #ffffff;
-            font-size: 1.7rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            text-transform: lowercase;
         }
 
         .pill-badge {
             align-self: flex-start;
             background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: #ffffff;
-            padding: 5px 16px;
+            padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.8rem;
-            margin-top: -5px; margin-left: 5px;
+            font-size: 0.6rem;
+            margin-top: -10px; margin-left: 2px;
+            text-transform: lowercase;
+            letter-spacing: 0.5px;
         }
 
         .info-text {
             color: rgba(255, 255, 255, 0.7);
-            font-size: 1rem;
+            font-size: 0.75rem;
             padding-left: 8px;
+            text-align: center;
+            margin-top: 5px;
         }
 
         /* Social Icons */
         .socials-row {
             display: flex;
-            gap: 20px;
-            padding-left: 8px;
+            justify-content: center;
+            gap: 15px;
             align-items: center;
+            margin-top: 5px;
         }
 
         .social-icon {
-            color: #ffffff;
-            font-size: 1.45rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2rem;
             text-decoration: none;
             transition: transform 0.2s ease, text-shadow 0.2s ease, color 0.2s ease;
         }
 
-        .social-icon.steam:hover { text-shadow: 0 0 12px rgba(255,255,255,0.8); transform: scale(1.08); }
+        .social-icon.steam:hover { color: #ffffff; text-shadow: 0 0 12px rgba(255,255,255,0.8); transform: scale(1.08); }
         .social-icon.discord:hover { color: #5865F2; text-shadow: 0 0 12px rgba(88, 101, 242, 0.8); transform: scale(1.08); }
         .social-icon.roblox:hover { color: #aaaaaa; text-shadow: 0 0 12px rgba(255, 255, 255, 0.5); transform: scale(1.08); }
         .social-icon.tiktok:hover { color: #ff007f; text-shadow: 0 0 12px rgba(255, 0, 127, 0.8); transform: scale(1.08); }
@@ -203,23 +224,24 @@
         /* === DETACHED AUDIO PLAYER BAR === */
         .audio-player-container {
             width: 100%;
-            background: rgba(14, 14, 14, 0.75);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(10, 10, 10, 0.85);
             border-radius: 30px;
-            padding: 12px 25px;
+            padding: 10px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.9);
             gap: 15px;
         }
 
-        .time-stamp { color: rgba(255, 255, 255, 0.5); font-size: 0.8rem; font-weight: 500; }
+        .time-stamp { 
+            color: rgba(255, 255, 255, 0.5); 
+            font-size: 0.6rem; 
+        }
 
         .timeline-bar {
             flex-grow: 1;
-            height: 6px;
+            height: 4px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
             position: relative;
@@ -236,17 +258,17 @@
         }
 
         .timeline-progress::after {
-            content: ''; position: absolute; right: -6px; top: -4px;
-            width: 14px; height: 14px;
+            content: ''; position: absolute; right: -4px; top: -3px;
+            width: 10px; height: 10px;
             background: #ffffff; border-radius: 50%;
             box-shadow: 0 0 10px rgba(255,255,255,0.9);
         }
 
-        .player-controls { display: flex; align-items: center; gap: 18px; }
+        .player-controls { display: flex; align-items: center; gap: 15px; }
         
         .control-btn {
             background: none; border: none; color: rgba(255, 255, 255, 0.85);
-            font-size: 0.95rem; cursor: pointer; transition: color 0.2s;
+            font-size: 0.8rem; cursor: pointer; transition: color 0.2s;
         }
         .control-btn:hover { color: #ffffff; text-shadow: 0 0 8px rgba(255,255,255,0.6); }
 
@@ -259,6 +281,9 @@
         <source src="https://r2.fakecrime.bio/backgrounds/48d57112-2356-4d3b-805d-78022b612aae.mp4" type="video/mp4">
     </video>
 
+    <!-- Dot Matrix Overlay -->
+    <div class="bg-pattern"></div>
+
     <!-- Entry Screen with Snow -->
     <div id="entry-overlay" onclick="startBioSite()">
         <canvas id="snow-canvas"></canvas>
@@ -266,7 +291,6 @@
     </div>
 
     <!-- BACKGROUND MUSIC -->
-    <!-- Replace the src below with your .mp3 file link once you convert the Spotify song -->
     <audio id="bg-track" src="https://files.catbox.moe/wdh4ur.mp3" loop></audio>
 
     <div class="wrapper">
@@ -275,7 +299,7 @@
             
             <div class="profile-header">
                 <div class="pfp-container">
-                    <!-- Updated Avatar Link -->
+                    <!-- Avatar Link -->
                     <img class="pfp-image" src="https://r2.fakecrime.bio/avatars/6dcd825e-eadc-4568-8ee3-d92919f7f72a.webp" alt="huracan">
                     <div class="anime-vein">💢</div>
                     <div class="status-badge">!</div>
@@ -361,12 +385,10 @@
         }
         drawSnow();
 
-        // Handle window resize for snow
         window.addEventListener('resize', () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
         });
-
 
         // --- SITE ENTRY & AUDIO LOGIC ---
         function startBioSite() {
@@ -376,10 +398,8 @@
             overlay.style.opacity = '0';
             setTimeout(() => { overlay.style.display = 'none'; }, 800);
 
-            // Unmute and ensure background video plays
             bgVid.play().catch(e => console.log("Video autoplay prevented"));
 
-            // Setup audio
             track.volume = 0.35;
             track.play().catch(err => console.log("Audio requires valid MP3 link."));
             playing = true;
@@ -396,7 +416,6 @@
             playing = !playing;
         }
 
-        // Format time in minutes and seconds
         function formatTime(seconds) {
             let min = Math.floor(seconds / 60);
             let sec = Math.floor(seconds % 60);
@@ -404,7 +423,6 @@
             return `${min}:${sec}`;
         }
 
-        // Update progress bar and timestamps
         track.addEventListener('timeupdate', () => {
             if (track.duration) {
                 const progressPercent = (track.currentTime / track.duration) * 100;
@@ -414,7 +432,6 @@
             }
         });
 
-        // Set total time once metadata loads
         track.addEventListener('loadedmetadata', () => {
             totalTimeEl.textContent = formatTime(track.duration);
         });
