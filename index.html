@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>huracan | bio</title>
-    <!-- FontAwesome for the social icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
@@ -18,7 +17,7 @@
         }
 
         body, html {
-            background-color: #111111;
+            background-color: #000;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -28,45 +27,53 @@
             position: relative;
         }
 
-        /* === CRT SCANLINE / GRAIN OVERLAY === */
-        body::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 10;
-            background-size: 100% 3px, 3px 100%;
-            pointer-events: none;
+        /* === FULLSCREEN VIDEO BACKGROUND === */
+        .bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -100;
+            object-fit: cover;
+            opacity: 0.8; /* Slight dim so the card pops */
         }
 
-        /* Subtle dark moving background glow */
-        .bg-glow {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 50% 50%, #1e1e1e 0%, #0a0a0a 100%);
-            z-index: -1;
-        }
-
-        /* === SITE CLICK ENTRY OVERLAY === */
+        /* === ENTRY SCREEN (BLACK + SNOW) === */
         #entry-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: #090909;
+            background: #000000;
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #ffffff;
-            font-size: 1.1rem;
-            letter-spacing: 2px;
             cursor: pointer;
-            transition: opacity 0.5s ease, visibility 0.5s;
+            transition: opacity 0.8s ease, visibility 0.8s;
         }
 
-        /* === MAIN CONTAINER (MATCHING image_1e62c9.png) === */
+        #entry-text {
+            color: #ffffff;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            z-index: 10;
+            animation: pulse 2s infinite;
+        }
+
+        #snow-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* === MAIN CONTAINER === */
         .wrapper {
             display: flex;
             flex-direction: column;
@@ -75,29 +82,31 @@
             width: 100%;
             max-width: 540px;
             padding: 20px;
+            z-index: 10;
         }
 
         /* Main Bio Card */
         .main-card {
-            background: rgba(14, 14, 14, 0.85);
+            background: rgba(14, 14, 14, 0.75);
+            backdrop-filter: blur(8px);
             border-radius: 18px;
             width: 100%;
             padding: 35px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
-            position: relative;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
             display: flex;
             flex-direction: column;
             gap: 25px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
-        /* Header Layout: Profile Picture & Name side-by-side */
+        /* Header Layout: Profile Picture & Name */
         .profile-header {
             display: flex;
             align-items: center;
             gap: 20px;
         }
 
-        /* Profile Container with Red Accent Marks */
+        /* Profile Container with Anime Accents */
         .pfp-container {
             position: relative;
             width: 85px;
@@ -112,7 +121,6 @@
             border: 2px solid #222;
         }
 
-        /* Red circular decorative rings mimicking the custom border */
         .pfp-container::before {
             content: '';
             position: absolute;
@@ -125,45 +133,35 @@
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* The Custom Anime Vein (💢) indicator graphic placement */
         .anime-vein {
             position: absolute;
-            top: -6px;
-            right: -6px;
+            top: -6px; right: -6px;
             color: #ff2a2a;
             font-size: 1.3rem;
             text-shadow: 0 0 8px rgba(255, 42, 42, 0.6);
         }
 
-        /* Status Badge Overlay (❗️) */
         .status-badge {
             position: absolute;
-            bottom: 0;
-            left: -2px;
+            bottom: 0; left: -2px;
             background: #ffffff;
             color: #000000;
-            width: 24px;
-            height: 24px;
+            width: 24px; height: 24px;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.85rem;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
             border: 2px solid #0e0e0e;
         }
 
-        /* Username styling */
+        /* Typography & Info */
         .username {
             color: #ffffff;
             font-size: 1.7rem;
             font-weight: 600;
             letter-spacing: 0.5px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.1);
         }
 
-        /* Sub-badge pill below profile image */
         .pill-badge {
             align-self: flex-start;
             background: transparent;
@@ -172,21 +170,16 @@
             padding: 5px 16px;
             border-radius: 20px;
             font-size: 0.8rem;
-            margin-top: -5px;
-            margin-left: 5px;
-            letter-spacing: 0.5px;
+            margin-top: -5px; margin-left: 5px;
         }
 
-        /* Center Row Info (German) */
         .info-text {
             color: rgba(255, 255, 255, 0.7);
             font-size: 1rem;
-            text-align: left;
             padding-left: 8px;
-            letter-spacing: 0.5px;
         }
 
-        /* Social Icons Row Grid & Soft Glowing Interactions */
+        /* Social Icons */
         .socials-row {
             display: flex;
             gap: 20px;
@@ -201,152 +194,114 @@
             transition: transform 0.2s ease, text-shadow 0.2s ease, color 0.2s ease;
         }
 
-        /* Match specific glows from image_1e62c9.png */
-        .social-icon.steam:hover { color: #ffffff; text-shadow: 0 0 12px rgba(255,255,255,0.8); transform: scale(1.08); }
+        .social-icon.steam:hover { text-shadow: 0 0 12px rgba(255,255,255,0.8); transform: scale(1.08); }
         .social-icon.discord:hover { color: #5865F2; text-shadow: 0 0 12px rgba(88, 101, 242, 0.8); transform: scale(1.08); }
         .social-icon.roblox:hover { color: #aaaaaa; text-shadow: 0 0 12px rgba(255, 255, 255, 0.5); transform: scale(1.08); }
         .social-icon.tiktok:hover { color: #ff007f; text-shadow: 0 0 12px rgba(255, 0, 127, 0.8); transform: scale(1.08); }
         .social-icon.telegram:hover { color: #0088cc; text-shadow: 0 0 12px rgba(0, 136, 204, 0.8); transform: scale(1.08); }
 
-        /* === DETACHED AUDIO PLAYER BAR (BOTTOM OF image_1e62c9.png) === */
+        /* === DETACHED AUDIO PLAYER BAR === */
         .audio-player-container {
             width: 100%;
-            background: rgba(14, 14, 14, 0.85);
+            background: rgba(14, 14, 14, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.05);
             border-radius: 30px;
             padding: 12px 25px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
             gap: 15px;
         }
 
-        .time-stamp {
-            color: rgba(255, 255, 255, 0.25);
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
+        .time-stamp { color: rgba(255, 255, 255, 0.5); font-size: 0.8rem; font-weight: 500; }
 
-        /* Custom Track Timeline layout */
         .timeline-bar {
             flex-grow: 1;
             height: 6px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
             position: relative;
-            cursor: pointer;
         }
 
         .timeline-progress {
-            width: 78%; /* Matched progress location visual from picture */
+            width: 0%;
             height: 100%;
             background: rgba(255, 255, 255, 0.85);
             border-radius: 4px;
             position: relative;
             box-shadow: 0 0 8px rgba(255,255,255,0.5);
+            transition: width 0.1s linear;
         }
 
-        /* Timeline Knob handle */
         .timeline-progress::after {
-            content: '';
-            position: absolute;
-            right: -6px;
-            top: -4px;
-            width: 14px;
-            height: 14px;
-            background: #ffffff;
-            border-radius: 50%;
+            content: ''; position: absolute; right: -6px; top: -4px;
+            width: 14px; height: 14px;
+            background: #ffffff; border-radius: 50%;
             box-shadow: 0 0 10px rgba(255,255,255,0.9);
         }
 
-        /* Media Controls layout */
-        .player-controls {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            color: rgba(255, 255, 255, 0.85);
-        }
-
-        .control-btn {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: color 0.2s, text-shadow 0.2s;
-        }
+        .player-controls { display: flex; align-items: center; gap: 18px; }
         
-        .control-btn:hover {
-            color: #ffffff;
-            text-shadow: 0 0 8px rgba(255,255,255,0.6);
+        .control-btn {
+            background: none; border: none; color: rgba(255, 255, 255, 0.85);
+            font-size: 0.95rem; cursor: pointer; transition: color 0.2s;
         }
+        .control-btn:hover { color: #ffffff; text-shadow: 0 0 8px rgba(255,255,255,0.6); }
+
     </style>
 </head>
 <body>
 
-    <div class="bg-glow"></div>
+    <!-- Background Video -->
+    <video class="bg-video" autoplay loop muted playsinline id="bg-vid-element">
+        <source src="https://r2.fakecrime.bio/backgrounds/48d57112-2356-4d3b-805d-78022b612aae.mp4" type="video/mp4">
+    </video>
 
-    <!-- Click Entry overlay to bypass browser auto-play locks -->
+    <!-- Entry Screen with Snow -->
     <div id="entry-overlay" onclick="startBioSite()">
-        [ CLICK TO ENTER ]
+        <canvas id="snow-canvas"></canvas>
+        <div id="entry-text">Click</div>
     </div>
 
-    <!-- Background Music Link (Using a free default cyber track; Swap out as desired) -->
-    <audio id="bg-track" src="https://files.catbox.moe/g2v77k.mp3" loop></audio>
+    <!-- BACKGROUND MUSIC -->
+    <!-- Replace the src below with your .mp3 file link once you convert the Spotify song -->
+    <audio id="bg-track" src="https://files.catbox.moe/wdh4ur.mp3" loop></audio>
 
     <div class="wrapper">
         
-        <!-- MAIN PROFILE CARD -->
         <div class="main-card">
             
-            <!-- Avatar Section -->
             <div class="profile-header">
                 <div class="pfp-container">
-                    <!-- Embeds your pfp directly from image_1e635d.png -->
-                    <img class="pfp-image" src="https://i.imgur.com/vHq0L9H.png" alt="huracan">
+                    <!-- Updated Avatar Link -->
+                    <img class="pfp-image" src="https://r2.fakecrime.bio/avatars/6dcd825e-eadc-4568-8ee3-d92919f7f72a.webp" alt="huracan">
                     <div class="anime-vein">💢</div>
                     <div class="status-badge">!</div>
                 </div>
-                
                 <div class="username">huracan</div>
             </div>
 
-            <!-- Custom text pill badge -->
             <div class="pill-badge">huracan</div>
-
-            <!-- Regional Tag -->
             <div class="info-text">German</div>
 
-            <!-- Dynamic Social Icon Rows linked directly to your handles -->
             <div class="socials-row">
-                <a href="https://steamcommunity.com/profiles/76561199426708994/" target="_blank" class="social-icon steam" title="Steam">
-                    <i class="fab fa-steam"></i>
-                </a>
-                <a href="https://discordapp.com/users/622889081097158711" target="_blank" class="social-icon discord" title="Discord">
-                    <i class="fab fa-discord"></i>
-                </a>
-                <a href="https://www.roblox.com/users/1286354240/profile" target="_blank" class="social-icon roblox" title="Roblox">
-                    <i class="fas fa-cube"></i>
-                </a>
-                <a href="#" target="_blank" class="social-icon tiktok" title="TikTok">
-                    <i class="fab fa-tiktok"></i>
-                </a>
-                <a href="https://t.me/nothuracan" target="_blank" class="social-icon telegram" title="Telegram">
-                    <i class="fab fa-telegram-plane"></i>
-                </a>
+                <a href="https://steamcommunity.com/profiles/76561199426708994/" target="_blank" class="social-icon steam"><i class="fab fa-steam"></i></a>
+                <a href="https://discordapp.com/users/622889081097158711" target="_blank" class="social-icon discord"><i class="fab fa-discord"></i></a>
+                <a href="https://www.roblox.com/users/1286354240/profile" target="_blank" class="social-icon roblox"><i class="fas fa-cube"></i></a>
+                <a href="https://tiktok.com/@odrcz" target="_blank" class="social-icon tiktok"><i class="fab fa-tiktok"></i></a>
+                <a href="https://t.me/nothuracan" target="_blank" class="social-icon telegram"><i class="fab fa-telegram-plane"></i></a>
             </div>
 
         </div>
 
-        <!-- DETACHED MUSIC PLAYER BAR -->
         <div class="audio-player-container">
-            <span class="time-stamp">02:20</span>
-            
+            <span class="time-stamp" id="current-time">0:00</span>
             <div class="timeline-bar">
-                <div class="timeline-progress"></div>
+                <div class="timeline-progress" id="progress-bar"></div>
             </div>
-            
-            <span class="time-stamp">02:35</span>
+            <span class="time-stamp" id="total-time">0:00</span>
             
             <div class="player-controls">
                 <button class="control-btn" id="play-pause-toggle" onclick="toggleAudio()"><i class="fas fa-pause"></i></button>
@@ -356,21 +311,77 @@
 
     </div>
 
-    <!-- JAVASCRIPT LOGIC ENGINE -->
+    <!-- JAVASCRIPT FOR SNOW & AUDIO -->
     <script>
         const track = document.getElementById('bg-track');
         const playPauseBtn = document.getElementById('play-pause-toggle');
+        const progressBar = document.getElementById('progress-bar');
+        const currentTimeEl = document.getElementById('current-time');
+        const totalTimeEl = document.getElementById('total-time');
         let playing = false;
 
+        // --- SNOWFALL EFFECT FOR ENTRY SCREEN ---
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        const snowflakes = [];
+
+        for (let i = 0; i < 120; i++) {
+            snowflakes.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 2 + 1,
+                speed: Math.random() * 2 + 0.5
+            });
+        }
+
+        function drawSnow() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            for (let i = 0; i < snowflakes.length; i++) {
+                let p = snowflakes[i];
+                ctx.moveTo(p.x, p.y);
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2, true);
+            }
+            ctx.fill();
+            updateSnow();
+            requestAnimationFrame(drawSnow);
+        }
+
+        function updateSnow() {
+            for (let i = 0; i < snowflakes.length; i++) {
+                let p = snowflakes[i];
+                p.y += p.speed;
+                if (p.y > height) {
+                    snowflakes[i] = { x: Math.random() * width, y: 0, radius: p.radius, speed: p.speed };
+                }
+            }
+        }
+        drawSnow();
+
+        // Handle window resize for snow
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+
+        // --- SITE ENTRY & AUDIO LOGIC ---
         function startBioSite() {
             const overlay = document.getElementById('entry-overlay');
+            const bgVid = document.getElementById('bg-vid-element');
+            
             overlay.style.opacity = '0';
-            setTimeout(() => {
-                overlay.style.display = 'none';
-            }, 500);
+            setTimeout(() => { overlay.style.display = 'none'; }, 800);
 
-            track.volume = 0.35; // Standard sound initialization normalization
-            track.play().catch(err => console.log("Autoplay context initialization skipped until action taken."));
+            // Unmute and ensure background video plays
+            bgVid.play().catch(e => console.log("Video autoplay prevented"));
+
+            // Setup audio
+            track.volume = 0.35;
+            track.play().catch(err => console.log("Audio requires valid MP3 link."));
             playing = true;
         }
 
@@ -384,6 +395,29 @@
             }
             playing = !playing;
         }
+
+        // Format time in minutes and seconds
+        function formatTime(seconds) {
+            let min = Math.floor(seconds / 60);
+            let sec = Math.floor(seconds % 60);
+            if (sec < 10) sec = '0' + sec;
+            return `${min}:${sec}`;
+        }
+
+        // Update progress bar and timestamps
+        track.addEventListener('timeupdate', () => {
+            if (track.duration) {
+                const progressPercent = (track.currentTime / track.duration) * 100;
+                progressBar.style.width = progressPercent + "%";
+                currentTimeEl.textContent = formatTime(track.currentTime);
+                totalTimeEl.textContent = formatTime(track.duration);
+            }
+        });
+
+        // Set total time once metadata loads
+        track.addEventListener('loadedmetadata', () => {
+            totalTimeEl.textContent = formatTime(track.duration);
+        });
     </script>
 </body>
 </html>
