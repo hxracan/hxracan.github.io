@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>huracan | bio</title>
+    <!-- FontAwesome for Premium Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts: Michroma -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
@@ -38,7 +40,7 @@
             width: 100vw; height: 100vh;
             object-fit: cover;
             z-index: -100;
-            filter: blur(15px) brightness(0.35);
+            filter: blur(15px) brightness(0.4);
             transform: scale(1.1); /* Prevents blurred white edges around the screen */
         }
 
@@ -311,20 +313,25 @@
 </head>
 <body>
 
+    <!-- 1. True Fullscreen Background Video (UPDATED CATBOX LINK) -->
     <video class="bg-video" autoplay loop muted playsinline id="bg-vid-element">
-        <source src="https://r2.fakecrime.bio/backgrounds/48d57112-2356-4d3b-805d-78022b612aae.mp4" type="video/mp4">
+        <source src="https://files.catbox.moe/hl3kq6.mp4" type="video/mp4">
     </video>
 
+    <!-- 2. Cinematic Overlays -->
     <div class="tv-static"></div>
     <div class="scanlines"></div>
 
+    <!-- 3. Entry Screen with Snow -->
     <div id="entry-overlay" onclick="startBioSite()">
         <canvas id="snow-canvas"></canvas>
         <div id="entry-text">Click</div>
     </div>
 
+    <!-- 4. Background Audio (UPDATED CATBOX LINK) -->
     <audio id="bg-track" src="https://files.catbox.moe/wdh4ur.mp3" loop></audio>
 
+    <!-- 5. Main Content Wrapper -->
     <div class="perspective-wrapper">
         <div class="tilt-card-group" id="tilt-element">
             
@@ -350,6 +357,7 @@
                 </div>
             </div>
 
+            <!-- Media Player -->
             <div class="audio-player-container">
                 <span class="time-stamp" id="current-time">0:00</span>
                 <div class="timeline-bar" id="timeline-container">
@@ -366,6 +374,7 @@
         </div>
     </div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
         // --- 1. REVERSE 3D TILT EFFECT ---
         const tiltElement = document.getElementById('tilt-element');
