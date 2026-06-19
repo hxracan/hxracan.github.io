@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>huracan | bio</title>
+    <title>huracan</title>
     <!-- FontAwesome for Premium Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts: Michroma -->
@@ -33,15 +33,15 @@
             position: relative;
         }
 
-        /* === 1. BACKGROUND VIDEO (15px BLUR) === */
+        /* === 1. BACKGROUND VIDEO (NO BLUR) === */
         .bg-video {
             position: fixed;
             top: 0; left: 0;
             width: 100vw; height: 100vh;
             object-fit: cover;
             z-index: -100;
-            filter: blur(15px) brightness(0.4);
-            transform: scale(1.1); /* Prevents blurred white edges around the screen */
+            filter: brightness(0.35); /* Removed the blur, kept dark enough for readability */
+            transform: scale(1.05); /* Slight scale to prevent edges */
         }
 
         /* === 2. TV STATIC & SCANLINES OVERLAY === */
@@ -124,7 +124,7 @@
             transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1); 
         }
 
-        /* === 5. PREMIUM GLASSMORPHISM CARD (10px BLUR) === */
+        /* === 5. PREMIUM GLASSMORPHISM CARD (10% BLUR) === */
         .main-card {
             background: rgba(12, 12, 12, 0.45);
             backdrop-filter: blur(10px);
@@ -140,6 +140,7 @@
             transform: translateZ(30px);
         }
 
+        /* Profile Layout */
         .profile-header {
             display: flex;
             align-items: center;
@@ -147,6 +148,7 @@
             transform: translateZ(20px);
         }
 
+        /* FIXED AVATAR SETTINGS (MATCHING IMAGE) */
         .pfp-container {
             position: relative;
             width: 90px;
@@ -158,38 +160,43 @@
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid rgba(255,255,255,0.15);
+            /* Removed the white border to match your screenshot */
             box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+            filter: grayscale(20%); /* Matches the dark, moody tone of the reference */
         }
 
+        /* Red glowing anime vein */
         .anime-vein {
             position: absolute;
-            top: -6px; right: -6px;
+            top: 0px; right: -5px;
             color: #ff2a2a;
-            font-size: 1.3rem;
-            text-shadow: 0 0 15px rgba(255, 42, 42, 0.9);
+            font-size: 1.6rem;
+            filter: drop-shadow(0 0 6px #ff2a2a);
             font-family: sans-serif;
             animation: throb 1.5s infinite;
         }
 
         @keyframes throb {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px #ff2a2a); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 12px #ff2a2a); }
         }
 
+        /* '!' Badge */
         .status-badge {
             position: absolute;
-            bottom: 0px; left: 0px;
+            bottom: 5px; left: -5px;
             background: #ffffff;
             color: #000000;
             width: 24px; height: 24px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 900; font-size: 0.8rem;
+            font-weight: 900; font-size: 0.9rem;
+            border: 2px solid #111; /* Gives separation from the background */
             box-shadow: 0 4px 10px rgba(0,0,0,0.8);
             font-family: sans-serif;
         }
 
+        /* Typography */
         .username {
             color: #ffffff;
             font-size: 1.5rem;
@@ -313,7 +320,7 @@
 </head>
 <body>
 
-    <!-- 1. True Fullscreen Background Video (UPDATED CATBOX LINK) -->
+    <!-- 1. Fullscreen Background Video (NO BLUR) -->
     <video class="bg-video" autoplay loop muted playsinline id="bg-vid-element">
         <source src="https://files.catbox.moe/hl3kq6.mp4" type="video/mp4">
     </video>
@@ -322,13 +329,13 @@
     <div class="tv-static"></div>
     <div class="scanlines"></div>
 
-    <!-- 3. Entry Screen with Snow -->
+    <!-- 3. Entry Screen -->
     <div id="entry-overlay" onclick="startBioSite()">
         <canvas id="snow-canvas"></canvas>
         <div id="entry-text">Click</div>
     </div>
 
-    <!-- 4. Background Audio (UPDATED CATBOX LINK) -->
+    <!-- 4. Background Audio -->
     <audio id="bg-track" src="https://files.catbox.moe/wdh4ur.mp3" loop></audio>
 
     <!-- 5. Main Content Wrapper -->
@@ -337,6 +344,7 @@
             
             <div class="main-card">
                 <div class="profile-header">
+                    <!-- FIXED AVATAR BASED ON IMAGE -->
                     <div class="pfp-container">
                         <img class="pfp-image" src="https://r2.fakecrime.bio/avatars/6dcd825e-eadc-4568-8ee3-d92919f7f72a.webp" alt="huracan">
                         <div class="anime-vein">💢</div>
@@ -376,14 +384,37 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
+        // --- 0. DYNAMIC TAB TITLE GLITCH (10ms COOLDOWN) ---
+        const baseTitle = "huracan";
+        const glitchChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?";
+        let chaosLevel = 0;
+
+        // Starts as "huracan", rapidly becomes more chaotic over time
+        setInterval(() => {
+            chaosLevel += 0.0003; 
+            if (chaosLevel > 0.8) chaosLevel = 0.8; // Caps the chaos so it doesn't break entirely
+
+            let glitchedTitle = "";
+            let randomLengthAdd = Math.random() < chaosLevel ? Math.floor(Math.random() * 4) : 0;
+            let targetLength = baseTitle.length + randomLengthAdd;
+
+            for (let i = 0; i < targetLength; i++) {
+                if (Math.random() < chaosLevel) {
+                    glitchedTitle += glitchChars[Math.floor(Math.random() * glitchChars.length)];
+                } else {
+                    glitchedTitle += baseTitle[i] || "";
+                }
+            }
+            
+            document.title = glitchedTitle || baseTitle;
+        }, 10);
+
         // --- 1. REVERSE 3D TILT EFFECT ---
         const tiltElement = document.getElementById('tilt-element');
         
         document.addEventListener('mousemove', (e) => {
-            // Reversing the math pushes the card away from the cursor.
             const xAxis = (window.innerWidth / 2 - e.pageX) / 40; 
             const yAxis = (window.innerHeight / 2 - e.pageY) / 40; 
-            
             tiltElement.style.transform = `rotateY(${xAxis}deg) rotateX(${-yAxis}deg)`;
         });
 
@@ -404,14 +435,11 @@
             const overlay = document.getElementById('entry-overlay');
             const bgVid = document.getElementById('bg-vid-element');
             
-            // Cinematic Fade out
             overlay.style.opacity = '0';
             setTimeout(() => { overlay.style.display = 'none'; }, 1200);
 
-            // Ensure background video plays
             bgVid.play().catch(e => console.log("Video autoplay prevented"));
 
-            // Start Audio
             track.volume = 0.4;
             track.play().catch(err => console.log("Audio failed to play."));
             playing = true;
