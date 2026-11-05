@@ -20,7 +20,9 @@ npm run test:browser
 npm run build
 ```
 
-Browser tests use WebKit with iPad emulation. They cover language and preference persistence, library backups, touch filtering, session retention, playtime, closing behavior, and portrait and landscape layouts. This is browser emulation, not testing on a physical iPad.
+Browser tests use WebKit with iPad emulation. They cover language and preference persistence, library backups, touch filtering, session retention, playtime, closing behavior, and portrait and landscape layouts. External fonts, images, and launched game frames use fixtures to keep interface tests independent of provider network availability. The catalog tests validate real image and embed mappings. This is browser emulation, not testing on a physical iPad.
+
+Playwright is pinned to 1.63.0 to avoid the [Linux WebKit r2370 blur-rendering regression](https://github.com/microsoft/playwright/issues/43426) in 1.64.x.
 
 ## Preferences
 

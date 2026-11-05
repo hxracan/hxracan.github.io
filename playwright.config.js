@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: './tests',
   testMatch: 'browser.spec.js',
   timeout: 60000,
+  globalTimeout: 180000,
   expect: { timeout: 15000 },
   fullyParallel: false,
   workers: 1,
@@ -14,6 +15,7 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:4173',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
+    navigationTimeout: 20000,
   },
   webServer: {
     command: 'npm run dev -- --port 4173 --strictPort',

@@ -1,5 +1,20 @@
 import { test, expect } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) =>
+    route.fulfill({ contentType: 'text/css', body: '' }),
+  );
+  await page.route(/https:\/\/(assets\.playkovo\.com|img\.gamemonetize\.com)\//, (route) =>
+    route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aF9sAAAAASUVORK5CYII=',
+        'base64',
+      ),
+    }),
+  );
+});
+
 const ready = async (page) => {
   await expect(page.locator('.game-grid')).toHaveAttribute('aria-busy', 'false');
 };
@@ -66,13 +81,11 @@ test('iPad settings, language, theme, touch defaults, and backups persist', asyn
     language: 'en',
     theme: 'dark',
   };
-  await page
-    .getByLabel('Import library', { exact: true })
-    .setInputFiles({
-      name: 'library.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(backup)),
-    });
+  await page.getByLabel('Import library', { exact: true }).setInputFiles({
+    name: 'library.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup)),
+  });
   await expect(page.locator('.settings-status')).toHaveText('Library imported.');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.locator('.main-nav').getByRole('button', { name: 'Discover', exact: true }).click();

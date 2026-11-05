@@ -331,7 +331,10 @@ export default function Settings({
               setPending('reset');
               document
                 .querySelector('.settings-group .data-actions')
-                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                ?.scrollIntoView({
+                  behavior: preferences.reducedMotion ? 'auto' : 'smooth',
+                  block: 'center',
+                });
             }}
           >
             <RotateCcw size={16} />

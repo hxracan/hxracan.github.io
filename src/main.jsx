@@ -80,6 +80,7 @@ function App() {
     (value) => value && typeof value === 'object' && !Array.isArray(value),
   );
   const preferences = useMemo(() => normalizePreferences(storedPreferences), [storedPreferences]);
+  const scrollBehavior = preferences.reducedMotion ? 'auto' : 'smooth';
   const [manifest, setManifest] = useState(null),
     [manifestError, setManifestError] = useState(false),
     [view, setView] = useState('discover'),
@@ -221,7 +222,7 @@ function App() {
     setSort(next === 'discover' ? 'discovery' : 'newest');
     setPage(1);
     setSearchOpen(false);
-    window.scrollTo({ top: 0, behavior: preferences.reducedMotion ? 'instant' : 'smooth' });
+    window.scrollTo({ top: 0, behavior: scrollBehavior });
   };
   const openGame = (game) => {
     setSelection(game);
@@ -285,7 +286,7 @@ function App() {
   };
   const jump = (number) => {
     setPage(number);
-    library.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    library.current?.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
   };
   const selectCategory = (value) => {
     setCategory(value);
@@ -623,7 +624,7 @@ function App() {
                         className="icon-button row-arrow"
                         aria-label={t.previous}
                         onClick={() =>
-                          touchRow.current?.scrollBy({ left: -440, behavior: 'smooth' })
+                          touchRow.current?.scrollBy({ left: -440, behavior: scrollBehavior })
                         }
                       >
                         <ChevronLeft size={19} />
@@ -632,7 +633,7 @@ function App() {
                         className="icon-button row-arrow"
                         aria-label={t.next}
                         onClick={() =>
-                          touchRow.current?.scrollBy({ left: 440, behavior: 'smooth' })
+                          touchRow.current?.scrollBy({ left: 440, behavior: scrollBehavior })
                         }
                       >
                         <ChevronRight size={19} />
@@ -918,7 +919,7 @@ function App() {
             <button
               className="back-top"
               aria-label={t.backTop}
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior })}
             >
               <ArrowUp size={20} />
             </button>
