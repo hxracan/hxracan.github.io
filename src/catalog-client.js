@@ -25,7 +25,7 @@ export async function getGame(id) {
   if (!details.has(key))
     details.set(
       key,
-      fetch(`${import.meta.env.BASE_URL}catalog/${key}.json`)
+      fetch(`${import.meta.env.BASE_URL}catalog/${key}.json`, { cache: 'no-cache' })
         .then((r) => {
           if (!r.ok) throw new Error('This game is unavailable.');
           return r.json();

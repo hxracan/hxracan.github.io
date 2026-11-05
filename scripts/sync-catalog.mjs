@@ -139,4 +139,19 @@ await rename(`${root}/data/catalog.json.tmp`, `${root}/data/catalog.json`);
 console.log(
   `Saved ${games.length.toLocaleString()} games, including their publisher thumbnails and embed URLs. No title or category filters applied.`,
 );
+try {
+  const response = await fetch(
+    'https://rss.gamemonetize.com/rssfeed.php?format=json&amount=1000000&type=mobile&category=All&company=All&popularity=newest',
+    { signal: AbortSignal.timeout(180000) },
+  );
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const mobile = await response.json();
+  if (!Array.isArray(mobile) || !mobile.length) throw new Error('Empty mobile feed');
+  await writeFile(`${root}/data/mobile-ids.json`, JSON.stringify(mobile.map((g) => `gm-${g.id}`)));
+  console.log(
+    `${mobile.length.toLocaleString()} games listed as mobile compatible by GameMonetize.`,
+  );
+} catch (error) {
+  console.warn(`Mobile compatibility list unavailable: ${error.message}`);
+}
 await import('./export-catalog.mjs');

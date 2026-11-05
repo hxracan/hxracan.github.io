@@ -1,6 +1,8 @@
 # unblockedgames
 
-A browser game library for [hxracan.github.io](https://hxracan.github.io), built with React and Vite. The catalog contains 38,628 games from GameMonetize and PlayKovo as of 5 November 2026, with publisher-provided thumbnails and embed URLs.
+A browser game library at [hxracan.github.io](https://hxracan.github.io). Built for iPad with a dark default, English and German interfaces, and the full imported GameMonetize and PlayKovo catalogs.
+
+The 5 November 2026 snapshot includes 38,628 games with publisher-provided icons and embed URLs. Of those, 22,854 are listed by their publishers as mobile compatible.
 
 ## Development
 
@@ -13,17 +15,28 @@ npm run dev
 
 ```sh
 npm test
+npx playwright install webkit
+npm run test:browser
 npm run build
-npm run preview
 ```
+
+Browser tests use WebKit with iPad emulation. They cover language and preference persistence, library backups, touch filtering, session retention, playtime, closing behavior, and portrait and landscape layouts. This is browser emulation, not testing on a physical iPad.
+
+## Preferences
+
+Settings includes language, dark or light appearance, text size, card density, reduced motion, touch-filter defaults, games per page, player expansion, session retention, closing confirmations, history, and playtime. Preferences are stored in the current browser. Saved games and play history can be exported or imported as a JSON library backup.
+
+The library remembers the last played game and offers to reopen it. Returning to the library keeps the current game iframe mounted by default. Browsing therefore preserves that live game session until it is closed, replaced, or the page is reloaded. Only visible playtime is counted.
+
+Game levels and scores are managed by the game provider. The portal cannot read or back up third-party game storage. Safari may restrict embedded storage, and keeping an iframe open is not a cloud save. Library backups contain bookmarks, history, playtime, and settings, not in-game checkpoints. Game sound and language are controlled inside each game.
+
+For a full-window experience on iPad, use Safari’s Share menu and choose **Add to Home Screen**.
 
 ## Deployment
 
-GitHub Actions builds and publishes the site to GitHub Pages on every push to `main`. In repository Settings → Pages, the publishing source is **GitHub Actions**.
+GitHub Actions tests, builds, and publishes to GitHub Pages on each push to `main`. The Pages publishing source is **GitHub Actions**. The website is static; search runs in a web worker and game details load in smaller files when needed. No backend, database, account, or API key is required.
 
-The site is completely static. The search index loads in a web worker, and game details load in small files when a game is opened. Only the current page of cards is rendered. No backend, database, account, or API key is required.
-
-## Updating the games
+## Updating the catalog
 
 ```sh
 npm run sync
@@ -34,19 +47,19 @@ git commit -m "Update game catalog"
 git push
 ```
 
-The sync script requests the complete GameMonetize HTML5 feed using a numeric amount because its `amount=All` response is capped at 5,001 entries. It also imports the complete PlayKovo embed feed. No title, category, or device filters are applied. Exact provider IDs are deduplicated; distinct games with similar names remain separate. Records without a title, HTTPS thumbnail, or HTTPS embed URL are reported as incomplete. Removed games disappear on the next successful sync.
+The sync script requests the complete GameMonetize HTML5 feed with a numeric amount because its `amount=All` response is capped at 5,001 entries. It also imports the complete PlayKovo feed and uses GameMonetize’s mobile feed to label touch-compatible entries. No game titles, categories, or device types are excluded from the full library.
 
-The checked-in `public/catalog` files contain the full catalog. The intermediate `data` directory is ignored. The latest working snapshot is retained if a provider becomes unavailable during a later sync. A first import fails instead of silently producing a partial catalog.
+Exact provider IDs are deduplicated; distinct games with similar names remain separate. Records missing a title, HTTPS thumbnail, or HTTPS embed URL are reported. Removed games disappear after a successful sync. The last snapshot is retained if a provider is temporarily unavailable. `public/catalog` contains the complete published data; the intermediate `data` folder is ignored.
 
-## Games and credits
+## Credits and privacy
 
-The games, artwork, titles, and other game assets belong to their respective developers and rights holders. This repository contains a catalog and embeds, not copies of the third-party game files. Ads, credits, and provider branding remain intact. Each game shows its provider and a source link.
+Games, artwork, titles, and other game assets belong to their respective developers and rights holders. This repository contains catalog data and embeds, not copies of third-party game files. Provider branding, advertising, and credits remain intact.
 
-- [GameMonetize publisher feed](https://gamemonetize.com/rss-builder)
+- [GameMonetize feed](https://gamemonetize.com/rss-builder)
 - [GameMonetize embedding FAQ](https://gamemonetize.com/faq)
 - [PlayKovo catalog documentation](https://playkovo.com/partners/docs/import-game-catalog)
 - [PlayKovo partner terms](https://playkovo.com/partners/terms)
 
-The catalog is a snapshot of those distribution feeds, not a copy of Poki or Playvio. Individual games depend on the provider, supported devices, and network access. The site does not bypass network restrictions. Games may contain third-party advertising and cookies.
+This is a snapshot of these distribution feeds, not a copy of Poki or Playvio. Availability depends on the provider, device, and network. The website does not bypass network restrictions. Individual games may show third-party ads or use cookies.
 
-Favorites and recently played entries stay in local storage on the visitor’s device. The site adds no analytics or advertising scripts of its own. Google Fonts serves the interface font. Third-party image requests and game embeds are subject to their providers’ policies.
+The website adds no analytics or advertising scripts of its own. Interface settings and library data remain in local storage. Google Fonts supplies the interface fonts. Game images and embeds load from their providers; GitHub Pages handles hosting requests.

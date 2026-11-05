@@ -1,427 +1,186 @@
-import React, { useEffect, useRef, useState, useDeferredValue } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-  ArrowUpRight,
   ArrowRight,
-  Search,
-  Heart,
-  Clock3,
-  Compass,
-  Grid2X2,
-  Sparkles,
-  Shuffle,
-  Gamepad2,
+  ArrowUp,
+  ArrowUpRight,
+  Bookmark,
+  Car,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  X,
-  Maximize2,
-  RotateCcw,
-  Menu,
-  Zap,
-  Car,
+  Clock3,
+  Compass,
+  Grid2X2,
+  Hand,
+  Info,
+  Moon,
+  Play,
   Puzzle,
+  Search,
+  Settings2,
+  Shuffle,
+  SlidersHorizontal,
+  Sun,
   Target,
-  Trophy,
   Users,
-  Check,
-  ExternalLink,
-  LoaderCircle,
-  Flower2,
+  X,
+  Zap,
 } from 'lucide-react';
-import { HeroArt } from './Artwork';
 import { queryCatalog, getGame } from './catalog-client';
+import { LanguageContext, Brand, Thumbnail, GameCard, InfoDialog } from './UI';
+import Player from './Player';
+import Settings from './Settings';
+import { defaultPreferences, normalizePreferences, parseBackup } from './preferences';
+import { messages, categoryName, relativeDate } from './i18n';
+import { useLocalState, usePlayClock, useStableEvent } from './hooks';
+import { addTime, startRecord, validRecords } from './storage';
 import './styles.css';
 
-const format = (n) => Number(n || 0).toLocaleString('en-US');
-const icons = {
+const validIds = (value) => Array.isArray(value) && value.every((id) => typeof id === 'string');
+const categoryIcons = {
   Racing: Car,
   Puzzle: Puzzle,
   Action: Zap,
   Shooting: Target,
-  Sports: Trophy,
   '2 Player': Users,
   Multiplayer: Users,
-  Arcade: Gamepad2,
 };
-const navigation = [
-  ['discover', 'Discover', Compass],
-  ['all', 'All games', Grid2X2],
-  ['new', 'New arrivals', Sparkles],
-  ['favorites', 'Favorites', Heart],
-  ['recent', 'Recently played', Clock3],
-];
-function useStored(key, fallback) {
-  const [value, setValue] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(key));
-      return Array.isArray(saved) ? saved : fallback;
-    } catch {
-      return fallback;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {}
-  }, [key, value]);
-  return [value, setValue];
-}
-function Mark({ small = false }) {
-  return (
-    <span className={`brand-mark ${small ? 'small' : ''}`}>
-      <Flower2 size={small ? 22 : 29} strokeWidth={2.7} />
-    </span>
-  );
-}
-function Thumbnail({ game, className = '' }) {
-  const [failed, setFailed] = useState(false);
-  return failed ? (
-    <div className={`thumbnail-fallback ${className}`}>
-      <Gamepad2 size={50} />
-      <span>{game.title}</span>
-    </div>
-  ) : (
-    <img
-      className={className}
-      src={game.thumbnail}
-      alt=""
-      loading="lazy"
-      decoding="async"
-      onError={() => setFailed(true)}
-    />
-  );
-}
-function GameCard({ game, onOpen, favorite, onFavorite, index }) {
-  return (
-    <article className="game-card" style={{ '--delay': `${Math.min(index, 7) * 35}ms` }}>
-      <button className="card-open" onClick={() => onOpen(game)} aria-label={`Play ${game.title}`}>
-        <div className="card-image">
-          <Thumbnail game={game} />
-          <span className="hover-play">
-            <Gamepad2 size={17} /> Let’s play <ArrowUpRight size={18} />
-          </span>
-          {game.category === 'Multiplayer' && (
-            <span className="card-badge">
-              <Users size={11} /> MULTIPLAYER
-            </span>
-          )}
-        </div>
-        <div className="card-copy">
-          <h3>{game.title}</h3>
-          <span>
-            {game.category}
-            <span className="meta-dot">·</span>
-            {game.provider}
-          </span>
-        </div>
-      </button>
-      <button
-        className={`favorite ${favorite ? 'is-favorite' : ''}`}
-        onClick={() => onFavorite(game.id)}
-        aria-label={`${favorite ? 'Remove' : 'Save'} ${game.title} ${favorite ? 'from' : 'to'} favorites`}
-        aria-pressed={favorite}
-      >
-        <Heart size={17} fill={favorite ? 'currentColor' : 'none'} />
-      </button>
-    </article>
-  );
-}
-
-function Dialog({ title, onClose, children, className = '' }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const previous = document.activeElement,
-      overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    ref.current?.focus();
-    const onKey = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-      if (e.key === 'Tab') {
-        const focusable = [
-          ...ref.current.querySelectorAll('button,a[href],input,select,iframe,[tabindex="0"]'),
-        ].filter((el) => !el.disabled);
-        const first = focusable[0],
-          last = focusable.at(-1);
-        if (
-          e.shiftKey &&
-          (document.activeElement === first || document.activeElement === ref.current)
-        ) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = overflow;
-      document.removeEventListener('keydown', onKey);
-      previous?.focus();
-    };
-  }, [onClose]);
-  return (
-    <div
-      className="dialog-backdrop"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <section
-        ref={ref}
-        className={`dialog ${className}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        tabIndex={-1}
-      >
-        {children}
-      </section>
-    </div>
-  );
-}
-function Player({ selection, onClose, favorites, onFavorite, onPlayed }) {
-  const [game, setGame] = useState(null),
-    [error, setError] = useState(''),
-    [started, setStarted] = useState(false),
-    [loaded, setLoaded] = useState(false),
-    [restart, setRestart] = useState(0);
-  const stage = useRef(null);
-  useEffect(() => {
-    let active = true;
-    getGame(selection.id)
-      .then((g) => {
-        if (active) setGame(g);
-      })
-      .catch((e) => {
-        if (active) setError(e.message);
-      });
-    return () => {
-      active = false;
-    };
-  }, [selection.id]);
-  const start = () => {
-    setStarted(true);
-    setLoaded(false);
-    onPlayed(selection.id);
-  };
-  const fullscreen = async () => {
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else await stage.current.requestFullscreen();
-    } catch {
-      setError('Fullscreen isn’t supported in this browser. You can still play here.');
-    }
-  };
-  return (
-    <Dialog title={selection.title} onClose={onClose} className="player-dialog">
-      <div className="player-top">
-        <div>
-          <span className="eyebrow">READY, SET, PLAY</span>
-          <h2>{selection.title}</h2>
-        </div>
-        <button className="icon-button" aria-label="Close game" onClick={onClose}>
-          <X />
-        </button>
-      </div>
-      <div ref={stage} className={`player-stage ${started ? 'started' : ''}`}>
-        {started && game ? (
-          <>
-            <iframe
-              key={restart}
-              title={`${game.title} — ${game.provider}`}
-              src={game.embedUrl}
-              allow="fullscreen; autoplay; gamepad; pointer-lock"
-              allowFullScreen
-              onLoad={() => setLoaded(true)}
-            />
-            {!loaded && (
-              <div className="player-loading" aria-live="polite">
-                <LoaderCircle className="spin" /> Loading from {game.provider}…
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="player-cover">
-            <Thumbnail game={selection} />
-            <div className="launch-copy">
-              <span className="launch-gamepad">
-                <Gamepad2 size={34} />
-              </span>
-              <h3>Your next little escape.</h3>
-              <p>
-                {game
-                  ? `Play ${game.title}, served by ${game.provider}.`
-                  : 'Getting your game ready…'}
-              </p>
-              <button className="primary-button" onClick={start} disabled={!game}>
-                {!game ? <LoaderCircle size={19} className="spin" /> : <Gamepad2 size={19} />} Play
-                now <ArrowUpRight size={19} />
-              </button>
-              <small>Free to play · Games may contain ads</small>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="player-toolbar">
-        <span className="provider-credit">
-          Via{' '}
-          <a
-            href={game?.providerUrl || 'https://gamemonetize.com'}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {game?.provider || selection.provider} <ExternalLink size={12} />
-          </a>
-        </span>
-        <div>
-          <button
-            onClick={() => onFavorite(selection.id)}
-            aria-pressed={favorites.includes(selection.id)}
-          >
-            <Heart size={17} fill={favorites.includes(selection.id) ? 'currentColor' : 'none'} />
-            {favorites.includes(selection.id) ? 'Saved' : 'Save'}
-          </button>
-          <button
-            onClick={() => {
-              setRestart((v) => v + 1);
-              setLoaded(false);
-            }}
-            disabled={!started}
-            aria-label="Restart game"
-          >
-            <RotateCcw size={17} />
-            <span>Restart</span>
-          </button>
-          <button onClick={fullscreen}>
-            <Maximize2 size={17} />
-            <span>Fullscreen</span>
-          </button>
-        </div>
-      </div>
-      {error && (
-        <p className="inline-error" role="alert">
-          {error}
-        </p>
-      )}
-      <div className="game-details">
-        <section>
-          <h3>A little about the game</h3>
-          <p>{game?.description || 'Loading game details…'}</p>
-        </section>
-        <section>
-          <h3>How to play</h3>
-          <p>{game?.controls || 'Use the instructions shown inside the game.'}</p>
-          <span className="category-label">{selection.category}</span>
-        </section>
-      </div>
-      {started && (
-        <p className="player-help">
-          Game not loading? Your browser or network may block the provider.{' '}
-          <a href={game.embedUrl} target="_blank" rel="noreferrer">
-            Open at source <ExternalLink size={12} />
-          </a>
-        </p>
-      )}
-    </Dialog>
-  );
-}
 
 function App() {
+  const [language, setLanguage, languageSaved] = useLocalState(
+    'unblockedgames.language',
+    'en',
+    (value) => ['en', 'de'].includes(value),
+  );
+  const [theme, setTheme] = useLocalState('unblockedgames.theme', 'dark', (value) =>
+    ['dark', 'light'].includes(value),
+  );
+  const [saved, setSaved, savedPersistent] = useLocalState(
+    'unblockedgames.favorites',
+    [],
+    validIds,
+  );
+  const [recent, setRecent, recentPersistent] = useLocalState(
+    'unblockedgames.recent',
+    [],
+    validIds,
+  );
+  const [records, setRecords, recordsPersistent] = useLocalState(
+    'unblockedgames.sessions',
+    {},
+    validRecords,
+  );
+  const [storedPreferences, setPreferences, preferencesPersistent] = useLocalState(
+    'unblockedgames.preferences',
+    {
+      ...defaultPreferences,
+      reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    },
+    (value) => value && typeof value === 'object' && !Array.isArray(value),
+  );
+  const preferences = useMemo(() => normalizePreferences(storedPreferences), [storedPreferences]);
   const [manifest, setManifest] = useState(null),
     [manifestError, setManifestError] = useState(false),
-    [nav, setNav] = useState('discover'),
-    [category, setCategory] = useState('All games'),
-    [q, setQ] = useState(''),
-    [sort, setSort] = useState('newest'),
-    [page, setPage] = useState(1),
-    [source, setSource] = useState('');
+    [view, setView] = useState('discover'),
+    [libraryTab, setLibraryTab] = useState('saved');
+  const [category, setCategory] = useState('All games'),
+    [query, setQuery] = useState(''),
+    [sort, setSort] = useState('discovery'),
+    [source, setSource] = useState(''),
+    [touchOnly, setTouchOnly] = useState(preferences.touchDefault),
+    [page, setPage] = useState(1);
   const [result, setResult] = useState({ games: [], total: 0, page: 1, pages: 1 }),
     [busy, setBusy] = useState(true),
     [error, setError] = useState(''),
-    [selected, setSelected] = useState(null),
+    [searchOpen, setSearchOpen] = useState(false);
+  const [selection, setSelection] = useState(null),
+    [session, setSession] = useState(null),
     [info, setInfo] = useState(''),
-    [mobileMenu, setMobileMenu] = useState(false),
-    [moreCategories, setMoreCategories] = useState(false);
-  const [favorites, setFavorites] = useStored('unblockedgames.favorites', []),
-    [recent, setRecent] = useStored('unblockedgames.recent', []);
-  const search = useRef(null),
+    [showContinue, setShowContinue] = useState(true),
+    [legacyLast, setLegacyLast] = useState(null);
+  const searchInput = useRef(null),
     library = useRef(null),
-    deferredQ = useDeferredValue(q);
-  const navigate = (next, cat = 'All games') => {
-    setNav(next);
-    setCategory(cat);
-    setQ('');
-    setPage(1);
-    setSort('newest');
-    setSource('');
-    setMobileMenu(false);
-  };
-  const closePlayer = React.useCallback(() => {
-    setSelected(null);
-    const url = new URL(window.location);
-    url.searchParams.delete('game');
-    window.history.replaceState({}, '', url);
-  }, []);
-  const toggleFavorite = (id) =>
-    setFavorites((items) =>
-      items.includes(id) ? items.filter((x) => x !== id) : [id, ...items].slice(0, 500),
-    );
-  const markPlayed = (id) =>
-    setRecent((items) => [id, ...items.filter((x) => x !== id)].slice(0, 100));
-  const openGame = (game) => {
-    setSelected(game);
-    const url = new URL(window.location);
-    url.searchParams.set('game', game.id);
-    window.history.replaceState({}, '', url);
-  };
+    touchRow = useRef(null);
+  const deferredQuery = useDeferredValue(query),
+    t = messages[language];
+  const persistent =
+    languageSaved &&
+    savedPersistent &&
+    recentPersistent &&
+    recordsPersistent &&
+    preferencesPersistent;
+  const format = (value) =>
+    new Intl.NumberFormat(language === 'de' ? 'de-DE' : 'en-US').format(value || 0);
+  const history = useMemo(
+    () => Object.values(records).sort((a, b) => b.lastPlayed - a.lastPlayed),
+    [records],
+  );
+  const lastGame = history[0] || legacyLast;
+  const isHome = view === 'discover' && !query;
+  const current = Boolean(selection && session && selection.id === session.game.id);
+  const onTime = useStableEvent((id, seconds) => {
+    if (preferences.rememberHistory && preferences.rememberTime)
+      setRecords((previous) => addTime(previous, id, seconds));
+  });
+  usePlayClock(session, current, onTime);
+
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}catalog/manifest.json`)
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
+    document.documentElement.lang = language;
+    document.title = `unblockedgames / ${t.heading}`;
+  }, [language, t.heading]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', theme === 'dark' ? '#0c0d11' : '#f4f4f1');
+  }, [theme]);
+  useEffect(() => {
+    document.documentElement.dataset.density = preferences.density;
+    document.documentElement.dataset.motion = preferences.reducedMotion ? 'reduced' : 'full';
+    document.documentElement.style.fontSize = preferences.textSize === 'large' ? '18px' : '16px';
+  }, [preferences.density, preferences.reducedMotion, preferences.textSize]);
+  useEffect(() => setPage(1), [preferences.pageSize]);
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}catalog/manifest.json`, { cache: 'no-cache' })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+        return response.json();
       })
       .then((data) => {
         setManifest(data);
-        setResult((old) =>
-          old.games.length ? old : { ...old, games: data.featured, total: data.count },
+        setResult((previous) =>
+          previous.games.length
+            ? previous
+            : { ...previous, games: data.featured, total: data.count },
         );
       })
       .catch(() => setManifestError(true));
-    const game = new URLSearchParams(window.location.search).get('game');
-    if (game)
-      getGame(game)
-        .then((g) => setSelected(g))
-        .catch(() => setError('That game is no longer available. Try another one below.'));
-    const onKey = (e) => {
-      if (
-        e.key === '/' &&
-        !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) &&
-        !document.querySelector('[role="dialog"]')
-      ) {
-        e.preventDefault();
-        search.current?.focus();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    const id = new URLSearchParams(window.location.search).get('game');
+    if (id)
+      getGame(id)
+        .then(setSelection)
+        .catch(() => setError('game'));
   }, []);
+  useEffect(() => {
+    if (!history.length && recent[0])
+      getGame(recent[0])
+        .then(setLegacyLast)
+        .catch(() => {});
+  }, [history.length, recent]);
   useEffect(() => {
     let active = true;
     setBusy(true);
     setError('');
     queryCatalog({
-      q: deferredQ,
+      q: deferredQuery,
       category,
-      sort: nav === 'discover' && sort === 'newest' ? 'discovery' : sort,
+      sort,
       page,
       source,
-      ids: nav === 'favorites' ? favorites : nav === 'recent' ? recent : null,
+      touchOnly,
+      limit: preferences.pageSize,
+      ids: view === 'library' ? (libraryTab === 'saved' ? saved : recent) : null,
     })
       .then((data) => {
         if (active) {
@@ -429,619 +188,804 @@ function App() {
           setBusy(false);
         }
       })
-      .catch((e) => {
+      .catch(() => {
         if (active) {
-          setError(e.message);
+          setError('library');
           setBusy(false);
         }
       });
     return () => {
       active = false;
     };
-  }, [deferredQ, category, sort, page, nav, source, favorites, recent]);
-  const jumpPage = (next) => {
-    setPage(next);
-    library.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [
+    deferredQuery,
+    category,
+    sort,
+    page,
+    source,
+    touchOnly,
+    view,
+    libraryTab,
+    saved,
+    recent,
+    preferences.pageSize,
+  ]);
+
+  const navigate = (next, tab = 'saved') => {
+    setView(next);
+    setLibraryTab(tab);
+    setQuery('');
+    setCategory('All games');
+    setSource('');
+    setTouchOnly(preferences.touchDefault);
+    setSort(next === 'discover' ? 'discovery' : 'newest');
+    setPage(1);
+    setSearchOpen(false);
+    window.scrollTo({ top: 0, behavior: preferences.reducedMotion ? 'instant' : 'smooth' });
   };
+  const openGame = (game) => {
+    setSelection(game);
+    const url = new URL(window.location);
+    url.searchParams.set('game', game.id);
+    window.history.replaceState({}, '', url);
+  };
+  const minimize = useStableEvent(() => {
+    setSelection(null);
+    if (!preferences.keepGameOpen) setSession(null);
+    const url = new URL(window.location);
+    url.searchParams.delete('game');
+    window.history.replaceState({}, '', url);
+  });
+  const toggleSaved = (id) =>
+    setSaved((previous) =>
+      previous.includes(id)
+        ? previous.filter((value) => value !== id)
+        : [id, ...previous].slice(0, 500),
+    );
+  const launch = (game) => {
+    setSession({ game, token: crypto.randomUUID() });
+    if (preferences.rememberHistory) {
+      setRecords((previous) => startRecord(previous, game));
+      setRecent((previous) => [game.id, ...previous.filter((id) => id !== game.id)].slice(0, 100));
+    }
+    setSelection(game);
+    setShowContinue(true);
+  };
+  const stop = () => setSession(null);
   const random = async () => {
-    setError('');
     try {
-      const { game } = await queryCatalog({ sort: 'random', category });
+      const { game } = await queryCatalog({ category, touchOnly, sort: 'random' });
       if (game) openGame(game);
-    } catch (e) {
-      setError(e.message);
+    } catch {
+      setError('library');
     }
   };
+  const focusSearch = () => {
+    setSearchOpen(true);
+    window.setTimeout(() => searchInput.current?.focus(), 0);
+  };
+  const shortcuts = useStableEvent((event) => {
+    if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+    if (
+      event.key === '/' &&
+      !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)
+    ) {
+      event.preventDefault();
+      focusSearch();
+    } else if (event.key === 'Escape') setSearchOpen(false);
+  });
+  useEffect(() => {
+    document.addEventListener('keydown', shortcuts);
+    return () => document.removeEventListener('keydown', shortcuts);
+  }, [shortcuts]);
+  const searchChange = (value) => {
+    setQuery(value);
+    setView('all');
+    setPage(1);
+  };
+  const jump = (number) => {
+    setPage(number);
+    library.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const selectCategory = (value) => {
+    setCategory(value);
+    setPage(1);
+  };
+  const clearLocal = () => {
+    setSaved([]);
+    setRecent([]);
+    setRecords({});
+    setLegacyLast(null);
+  };
+  const onPreference = (key, value) => {
+    setPreferences((previous) => ({ ...normalizePreferences(previous), [key]: value }));
+    if (key === 'touchDefault') {
+      setTouchOnly(value);
+      setPage(1);
+    }
+  };
+  const exportLibrary = () => {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      saved,
+      recent,
+      records,
+      preferences,
+      language,
+      theme,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `unblockedgames-library-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const importLibrary = (value) => {
+    const data = parseBackup(value);
+    setSaved((previous) => [...new Set([...data.saved, ...previous])].slice(0, 500));
+    setRecent((previous) => [...new Set([...data.recent, ...previous])].slice(0, 100));
+    setRecords((previous) => ({ ...previous, ...data.records }));
+    setPreferences(data.preferences);
+    setTheme(data.theme);
+    setLanguage(data.language);
+    setTouchOnly(data.preferences.touchDefault);
+  };
+  const resetSettings = () => {
+    setPreferences(defaultPreferences);
+    setLanguage('en');
+    setTheme('dark');
+    setTouchOnly(false);
+  };
   const categories = manifest?.categories || [];
-  const title = q
-    ? `Results for “${q}”`
-    : nav === 'favorites'
-      ? 'Your kind of fun.'
-      : nav === 'recent'
-        ? 'Back for another round.'
-        : category !== 'All games'
-          ? `${category}. All day.`
-          : nav === 'new'
-            ? 'Fresh out of the arcade.'
-            : nav === 'all'
-              ? 'The whole playground.'
-              : 'Find your next obsession.';
-  const isHome = nav === 'discover' && category === 'All games' && !q && !source;
-  const currentPage = result.page || 1;
-  const pageNumbers = [...new Set([1, currentPage - 1, currentPage, currentPage + 1, result.pages])]
-    .filter((p) => p >= 1 && p <= result.pages)
+  const spotlight = manifest?.spotlight || [];
+  const pageNumbers = [...new Set([1, result.page - 1, result.page, result.page + 1, result.pages])]
+    .filter((value) => value >= 1 && value <= result.pages)
     .sort((a, b) => a - b);
+  const heading = query
+    ? t.searchResults
+    : view === 'library'
+      ? libraryTab === 'saved'
+        ? t.savedTitle
+        : t.recentTitle
+      : category !== 'All games'
+        ? categoryName(category, language)
+        : t.explore;
+  const closeInfo = useStableEvent(() => setInfo(''));
+  const timeLabel = (record) =>
+    record.seconds < 60 ? t.underMinute : `${format(Math.floor(record.seconds / 60))} ${t.minutes}`;
+
   return (
-    <>
-      <a className="skip-link" href="#library">
-        Skip to games
+    <LanguageContext.Provider value={{ language, t }}>
+      <a className="skip-link" href="#game-library">
+        {t.skip}
       </a>
-      {mobileMenu && (
-        <button
-          className="sidebar-scrim"
-          onClick={() => setMobileMenu(false)}
-          aria-label="Close menu"
-        />
-      )}
-      <aside className={`sidebar ${mobileMenu ? 'open' : ''}`}>
-        <button
-          className="brand"
-          onClick={() => navigate('discover')}
-          aria-label="unblockedgames home"
-        >
-          <Mark />
-          <span>
-            unblocked<span>games</span>
-            <i />
-          </span>
-        </button>
-        <span className="sidebar-caption">YOUR DAILY DOSE OF FUN</span>
-        <nav aria-label="Main navigation">
-          {navigation.map(([id, label, Icon]) => (
-            <button
-              key={id}
-              className={nav === id && category === 'All games' ? 'active' : ''}
-              onClick={() => navigate(id)}
-            >
-              <Icon size={19} />
-              <span>{label}</span>
-              {id === 'favorites' && favorites.length > 0 ? (
-                <span className="nav-count">{favorites.length}</span>
-              ) : id === 'new' ? (
-                <span className="new-dot" />
-              ) : null}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-divider" />
-        <span className="sidebar-label">FIND YOUR THING</span>
-        <nav className="category-nav" aria-label="Game categories">
-          {categories.slice(0, moreCategories ? categories.length : 8).map((cat) => {
-            const Icon = icons[cat.name] || Gamepad2;
-            return (
-              <button
-                key={cat.name}
-                onClick={() => navigate('all', cat.name)}
-                className={category === cat.name ? 'active' : ''}
-              >
-                <Icon size={18} />
-                <span>{cat.name}</span>
-              </button>
-            );
-          })}
-          <button className="more-categories" onClick={() => setMoreCategories((v) => !v)}>
-            <Grid2X2 size={17} />
-            {moreCategories ? 'Fewer categories' : 'All categories'}
-            <ChevronDown size={13} className={moreCategories ? 'rotate' : ''} />
+      <header className="site-header">
+        <div className="header-inner">
+          <button
+            className="brand"
+            onClick={() => navigate('discover')}
+            aria-label="unblockedgames"
+          >
+            <Brand />
           </button>
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="sidebar-note">
-            <div className="mini-flower">✳</div>
-            <h3>
-              A little escape.
-              <br />A lot of fun.
-            </h3>
-            <p>
-              No downloads. No sign-ups.
-              <br />
-              Just good games.
-            </p>
-            <span className="free-sticker">
-              ALWAYS FREE <ArrowUpRight size={13} />
-            </span>
+          <nav className="main-nav" aria-label={t.browse}>
+            {[
+              ['discover', t.discover],
+              ['all', t.browse],
+              ['library', t.library],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                className={view === id ? 'active' : ''}
+                aria-current={view === id ? 'page' : undefined}
+                onClick={() => navigate(id)}
+              >
+                {label}
+                {id === 'library' && saved.length > 0 && <span>{saved.length}</span>}
+              </button>
+            ))}
+          </nav>
+          <div className="header-tools">
+            <button
+              className="icon-button header-search-button"
+              onClick={focusSearch}
+              aria-label={t.search}
+            >
+              <Search size={21} />
+            </button>
+            <button
+              className="icon-button theme-toggle"
+              onClick={() => setTheme((value) => (value === 'dark' ? 'light' : 'dark'))}
+              aria-label={theme === 'dark' ? t.light : t.dark}
+            >
+              {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
+            </button>
+            <button
+              className={`icon-button settings-tab ${view === 'settings' ? 'active' : ''}`}
+              onClick={() => navigate('settings')}
+              aria-label={t.settings}
+              aria-current={view === 'settings' ? 'page' : undefined}
+            >
+              <Settings2 size={20} />
+            </button>
+            <div className="language-switch" role="group" aria-label={t.language}>
+              <button
+                lang="en"
+                aria-label="English"
+                aria-pressed={language === 'en'}
+                onClick={() => setLanguage('en')}
+              >
+                EN
+              </button>
+              <button
+                lang="de"
+                aria-label="Deutsch"
+                aria-pressed={language === 'de'}
+                onClick={() => setLanguage('de')}
+              >
+                DE
+              </button>
+            </div>
           </div>
-          <button className="about-link" onClick={() => setInfo('about')}>
-            Made for your downtime <ArrowUpRight size={13} />
+        </div>
+        <div className={`search-drawer ${searchOpen ? 'open' : ''}`} hidden={!searchOpen}>
+          <label>
+            <Search size={22} />
+            <input
+              ref={searchInput}
+              value={query}
+              onChange={(event) => searchChange(event.target.value)}
+              placeholder={t.searchPlaceholder}
+              aria-label={t.search}
+            />
+            {query && (
+              <button className="icon-button" onClick={() => searchChange('')} aria-label={t.reset}>
+                <X size={18} />
+              </button>
+            )}
+          </label>
+          <button className="text-button" onClick={() => setSearchOpen(false)}>
+            {t.close}
           </button>
         </div>
-      </aside>
-      <div className="site-shell">
-        <header className="topbar">
-          <div className="topbar-greeting">
-            <button
-              className="mobile-menu icon-button"
-              onClick={() => setMobileMenu(true)}
-              aria-label="Open menu"
-            >
-              <Menu />
-            </button>
-            <span>
-              Less scrolling. <strong>More playing.</strong>
-              <span className="greeting-spark">✳</span>
-            </span>
-          </div>
-          <div className="header-actions">
-            <label className="search">
-              <Search size={18} />
-              <input
-                ref={search}
-                aria-label="Search games"
-                placeholder="Find your next favorite…"
-                value={q}
-                onChange={(e) => {
-                  setQ(e.target.value);
-                  setPage(1);
-                  if (e.target.value) {
-                    setNav('all');
-                    setCategory('All games');
-                  }
-                }}
-              />
-              {q ? (
-                <button aria-label="Clear search" onClick={() => setQ('')}>
-                  <X size={15} />
-                </button>
-              ) : (
-                <kbd>/</kbd>
-              )}
-            </label>
-            <button className="random-button" onClick={random}>
-              <Shuffle size={17} />
-              <span>Surprise me</span>
-              <ArrowUpRight size={16} />
-            </button>
-          </div>
-        </header>
-        <main>
-          <div className="page-intro">
-            <div>
-              <span className="eyebrow">
-                <span className="live-dot" /> YOUR NEXT GOOD TIME STARTS HERE
-              </span>
-              <h1>
-                Find your fun<span className="lime-period">.</span>
-              </h1>
-            </div>
-            <div className="intro-note">
-              <span className="game-count">
-                {manifest ? format(manifest.count) : 'Thousands of'} games
-              </span>
-              <span>Zero downloads. Endless possibilities.</span>
-            </div>
-          </div>
-          {isHome && (
-            <div className="hero-grid">
-              <section className="hero-feature">
-                <HeroArt />
-                <div className="hero-content">
-                  <span className="hero-kicker">
-                    <span className="kicker-dot" /> THE SPOTLIGHT <ArrowUpRight size={13} />
-                  </span>
-                  <h2>
-                    ALL GAS.
-                    <br />
-                    ALL GOOD.
-                  </h2>
-                  <p>
-                    A new track. A fresh challenge.
-                    <br />
-                    Your next favorite racing game.
-                  </p>
-                  <button
-                    className="hero-play"
-                    onClick={() => manifest?.featured?.[0] && openGame(manifest.featured[0])}
-                    disabled={!manifest?.featured?.length}
-                  >
-                    <Gamepad2 size={19} />
-                    Play Buggy Blast
-                    <ArrowUpRight size={18} />
-                  </button>
-                  <span className="hero-footnote">
-                    RACING <span>·</span> FREE TO PLAY
-                  </span>
-                </div>
-                <div className="hero-number">THE FEATURED PICK</div>
-                <div className="hero-decoration">
-                  PLAY
-                  <br />
-                  IT YOUR
-                  <br />
-                  WAY.
-                </div>
-              </section>
-              <section className="hero-side">
-                <div className="side-top">
-                  <span>
-                    <Sparkles size={14} /> FIND A NEW FAVORITE
-                  </span>
-                  <ArrowUpRight size={21} />
-                </div>
-                <h2>
-                  Small break.
-                  <br />
-                  <span>Big energy.</span>
-                </h2>
-                <p>
-                  Your five-minute escape
-                  <br />
-                  might last a little longer.
-                </p>
-                <div className="abstract-art" aria-hidden="true">
-                  <div className="art-ring" />
-                  <div className="art-sphere" />
-                  <div className="art-star">✳</div>
-                  <div className="art-spark">✧</div>
-                </div>
-                <button onClick={random} className="side-play">
-                  Roll the dice <Shuffle size={18} />
-                </button>
-                <div className="side-bottom">
-                  <span className="live-dot" /> INSTANT FUN. EVERY TIME.
-                </div>
-              </section>
-            </div>
-          )}
-          <div className="category-strip" aria-label="Browse categories">
-            {[
-              'All games',
-              'Action',
-              'Adventure',
-              'Racing',
-              'Puzzle',
-              'Arcade',
-              'Shooting',
-              '2 Player',
-            ]
-              .filter((name) => name === 'All games' || categories.some((c) => c.name === name))
-              .map((name) => {
-                const Icon = icons[name] || (name === 'All games' ? Grid2X2 : Compass);
-                return (
-                  <button
-                    key={name}
-                    className={category === name ? 'selected' : ''}
-                    onClick={() => {
-                      setCategory(name);
-                      setPage(1);
-                    }}
-                  >
-                    <Icon size={16} />
-                    {name}
-                  </button>
-                );
-              })}
-            <label className="category-select">
-              <span className="sr-only">More categories</span>
-              <select
-                value={categories.some((c) => c.name === category) ? category : ''}
-                onChange={(e) => {
-                  setCategory(e.target.value || 'All games');
-                  setPage(1);
-                }}
-              >
-                <option value="">More categories</option>
-                {categories.map((c) => (
-                  <option key={c.name} value={c.name}>
-                    {c.name} ({format(c.count)})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={15} />
-            </label>
-          </div>
-          <section id="library" className="library" ref={library}>
-            <div className="section-heading">
-              <div>
-                <div className="section-kicker">
-                  {nav === 'favorites'
-                    ? 'THE KEEPERS'
-                    : nav === 'recent'
-                      ? 'PICK UP WHERE YOU LEFT OFF'
-                      : nav === 'new'
-                        ? 'NEW ARRIVALS'
-                        : 'GOOD GAMES. GOOD TIMES.'}
-                </div>
-                <h2>{title}</h2>
-                <p className="results-count" aria-live="polite">
-                  {busy
-                    ? 'Finding your games…'
-                    : `${format(result.total)} ${result.total === 1 ? 'game' : 'games'}${category !== 'All games' ? ` in ${category}` : ' to explore'}`}
-                </p>
-              </div>
-              <div className="library-filters">
-                <label>
-                  <span className="sr-only">Game provider</span>
-                  <select
-                    aria-label="Game provider"
-                    value={source}
-                    onChange={(e) => {
-                      setSource(e.target.value);
-                      setPage(1);
-                    }}
-                  >
-                    <option value="">All providers</option>
-                    <option>GameMonetize</option>
-                    <option>PlayKovo</option>
-                  </select>
-                  <ChevronDown size={13} />
-                </label>
-                <label>
-                  <span className="sr-only">Sort games</span>
-                  <select
-                    aria-label="Sort games"
-                    value={sort}
-                    onChange={(e) => {
-                      setSort(e.target.value);
-                      setPage(1);
-                    }}
-                  >
-                    <option value="newest">
-                      {nav === 'discover' ? 'Our picks' : 'Newest first'}
-                    </option>
-                    <option value="az">A → Z</option>
-                    <option value="discovery">Discover picks</option>
-                  </select>
-                  <ChevronDown size={13} />
-                </label>
-              </div>
-            </div>
-            {(error || manifestError) && (
-              <div className="error-banner" role="alert">
-                {error || 'Could not load the catalog. Please refresh and try again.'}
-                <button onClick={() => window.location.reload()}>
-                  Try again <RotateCcw size={14} />
-                </button>
-              </div>
-            )}
-            <div
-              className={`game-grid ${busy && result.games.length ? 'updating' : ''}`}
-              aria-busy={busy}
-            >
-              {result.games.map((game, index) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  index={index}
-                  onOpen={openGame}
-                  favorite={favorites.includes(game.id)}
-                  onFavorite={toggleFavorite}
-                />
-              ))}
-              {busy &&
-                !result.games.length &&
-                Array.from({ length: 12 }, (_, i) => (
-                  <div className="skeleton-card" key={i}>
-                    <div />
-                    <span />
-                    <small />
+      </header>
+      <main className="main-content">
+        {view === 'settings' ? (
+          <Settings
+            language={language}
+            setLanguage={setLanguage}
+            theme={theme}
+            setTheme={setTheme}
+            preferences={preferences}
+            onPreference={onPreference}
+            persistent={persistent}
+            savedCount={saved.length}
+            historyCount={recent.length}
+            onExport={exportLibrary}
+            onImport={importLibrary}
+            onClearHistory={() => {
+              setRecent([]);
+              setRecords({});
+              setLegacyLast(null);
+            }}
+            onClearSaved={() => setSaved([])}
+            onReset={resetSettings}
+          />
+        ) : (
+          <>
+            {isHome && (
+              <>
+                <div className="intro">
+                  <div>
+                    <span className="eyebrow intro-eyebrow">
+                      <span className="orange-dash" />
+                      {t.arcade}
+                    </span>
+                    <h1>{t.heading}</h1>
+                    <p>{t.subtitle}</p>
                   </div>
-                ))}
-            </div>
-            {!busy && !result.games.length && !error && (
-              <div className="empty-state">
-                {nav === 'favorites' ? (
-                  <Heart size={40} />
-                ) : nav === 'recent' ? (
-                  <Clock3 size={40} />
-                ) : (
-                  <Search size={40} />
+                  <div className="catalog-stat">
+                    <strong>
+                      {manifest ? format(manifest.count) : '38k+'}
+                      <span>↗</span>
+                    </strong>
+                    <span>{t.catalog}</span>
+                  </div>
+                </div>
+                {lastGame && showContinue && preferences.showContinue && (
+                  <section className="continue-banner" aria-label={t.continueQuestion}>
+                    <span className="continue-art">
+                      <Thumbnail game={lastGame} />
+                    </span>
+                    <div>
+                      <span className="eyebrow">{t.welcomeBack}</span>
+                      <h2>{t.continueQuestion}</h2>
+                      <p>
+                        {lastGame.title}
+                        {history[0] && (
+                          <>
+                            <span>·</span>
+                            {timeLabel(history[0])}
+                            <span>·</span>
+                            {relativeDate(history[0].lastPlayed, language)}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <button className="primary-button" onClick={() => openGame(lastGame)}>
+                      <Play size={16} fill="currentColor" />
+                      {t.continue}
+                    </button>
+                    <button
+                      className="icon-button dismiss-continue"
+                      aria-label={t.later}
+                      onClick={() => setShowContinue(false)}
+                    >
+                      <X size={18} />
+                    </button>
+                  </section>
                 )}
-                <h3>
-                  {nav === 'favorites'
-                    ? 'Good games are worth keeping.'
-                    : nav === 'recent'
-                      ? 'Your next adventure starts here.'
-                      : 'No games found. Yet.'}
-                </h3>
-                <p>
-                  {nav === 'favorites'
-                    ? 'Tap the heart on any game to add it to your collection.'
-                    : nav === 'recent'
-                      ? 'Play a game and it will be waiting for you here.'
-                      : 'Try a different search, category, or provider.'}
-                </p>
-                <button className="primary-button" onClick={() => navigate('all')}>
-                  Explore all games <ArrowRight size={17} />
+                <section className="spotlight-grid" aria-label={t.spotlight}>
+                  {spotlight[0] ? (
+                    <article className="spotlight-main">
+                      <Thumbnail game={spotlight[0]} cover eager />
+                      <div className="spotlight-shade" />
+                      <div className="spotlight-top">
+                        <span className="feature-badge">
+                          <span className="status-dot" />
+                          {t.spotlight}
+                        </span>
+                        <button
+                          className={`glass-button ${saved.includes(spotlight[0].id) ? 'is-saved' : ''}`}
+                          onClick={() => toggleSaved(spotlight[0].id)}
+                          aria-label={`${saved.includes(spotlight[0].id) ? t.unsave : t.save}: ${spotlight[0].title}`}
+                          aria-pressed={saved.includes(spotlight[0].id)}
+                        >
+                          <Bookmark
+                            size={20}
+                            fill={saved.includes(spotlight[0].id) ? 'currentColor' : 'none'}
+                          />
+                        </button>
+                      </div>
+                      <div className="spotlight-copy">
+                        <span className="feature-category">
+                          <Hand size={14} />
+                          {t.touch}
+                          <span>/</span>
+                          {spotlight[0].provider}
+                        </span>
+                        <h2>
+                          {spotlight[0].title}
+                          <span>↗</span>
+                        </h2>
+                        <p>{t.heroLine}</p>
+                        <button className="primary-button" onClick={() => openGame(spotlight[0])}>
+                          <Play size={17} fill="currentColor" />
+                          {t.play}
+                          <ArrowUpRight size={19} />
+                        </button>
+                      </div>
+                      <span className="feature-edition">01 / {t.skateRace}</span>
+                    </article>
+                  ) : (
+                    <div className="feature-skeleton" />
+                  )}
+                  <div className="spotlight-side">
+                    {spotlight.slice(1, 3).map((game, index) => (
+                      <button
+                        key={game.id}
+                        className="side-feature"
+                        onClick={() => openGame(game)}
+                        aria-label={`${t.openGame}: ${game.title}`}
+                      >
+                        <Thumbnail game={game} cover eager />
+                        <div className="side-shade" />
+                        <span className="side-category">
+                          {categoryName(game.category, language)}
+                          <ArrowUpRight size={21} />
+                        </span>
+                        <div>
+                          <h3>{game.title}</h3>
+                          <p>{index === 0 ? t.sideOne : t.sideTwo}</p>
+                        </div>
+                        <span className="side-play">
+                          <Play size={16} fill="currentColor" />
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+                <section className="touch-section">
+                  <div className="row-heading">
+                    <div>
+                      <span className="eyebrow">
+                        <Hand size={13} />
+                        {t.touchPicks}
+                      </span>
+                      <h2>{t.touchTitle}</h2>
+                      <p>{t.touchSubtitle}</p>
+                    </div>
+                    <div className="row-actions">
+                      <button
+                        className="text-button"
+                        onClick={() => {
+                          navigate('all');
+                          setTouchOnly(true);
+                        }}
+                      >
+                        {t.viewAll}
+                        <ArrowUpRight size={16} />
+                      </button>
+                      <button
+                        className="icon-button row-arrow"
+                        aria-label={t.previous}
+                        onClick={() =>
+                          touchRow.current?.scrollBy({ left: -440, behavior: 'smooth' })
+                        }
+                      >
+                        <ChevronLeft size={19} />
+                      </button>
+                      <button
+                        className="icon-button row-arrow"
+                        aria-label={t.next}
+                        onClick={() =>
+                          touchRow.current?.scrollBy({ left: 440, behavior: 'smooth' })
+                        }
+                      >
+                        <ChevronRight size={19} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="touch-row" ref={touchRow}>
+                    {spotlight.slice(3).map((game) => (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        onOpen={openGame}
+                        saved={saved.includes(game.id)}
+                        onSave={toggleSaved}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
+            <section className="library-section" id="game-library" ref={library}>
+              <div className="library-heading">
+                <div>
+                  <span className="eyebrow">
+                    {view === 'library' ? t.libraryStatus : query ? t.search : t.browse}
+                  </span>
+                  <h2>{heading}</h2>
+                  <span className="results-count" aria-live="polite">
+                    {busy || query !== deferredQuery
+                      ? t.loading
+                      : `${format(result.total)} ${result.total === 1 ? t.result : t.results}`}
+                  </span>
+                </div>
+                <button className="surprise-button" onClick={random}>
+                  <Shuffle size={17} />
+                  <span>{t.surprise}</span>
+                  <ArrowUpRight size={16} />
                 </button>
               </div>
-            )}
-            {result.pages > 1 && (
-              <nav className="pagination" aria-label="Game pages">
-                <span>
-                  Page {format(currentPage)} of {format(result.pages)}
-                </span>
-                <div>
+              {view === 'library' && (
+                <div className="library-tabs">
                   <button
-                    aria-label="Previous page"
-                    disabled={currentPage === 1 || busy}
-                    onClick={() => jumpPage(currentPage - 1)}
+                    className={libraryTab === 'saved' ? 'active' : ''}
+                    onClick={() => {
+                      setLibraryTab('saved');
+                      setPage(1);
+                    }}
                   >
-                    <ChevronLeft size={18} />
+                    <Bookmark size={17} />
+                    {t.saved}
+                    <span>{saved.length}</span>
                   </button>
-                  {pageNumbers.map((p, i) => (
-                    <React.Fragment key={p}>
-                      {i > 0 && p - pageNumbers[i - 1] > 1 && (
-                        <span className="page-ellipsis">…</span>
-                      )}
-                      <button
-                        className={p === currentPage ? 'current' : ''}
-                        aria-current={p === currentPage ? 'page' : undefined}
-                        aria-label={`Page ${p}`}
-                        disabled={busy}
-                        onClick={() => jumpPage(p)}
-                      >
-                        {p}
-                      </button>
-                    </React.Fragment>
-                  ))}
                   <button
-                    aria-label="Next page"
-                    disabled={currentPage === result.pages || busy}
-                    onClick={() => jumpPage(currentPage + 1)}
+                    className={libraryTab === 'recent' ? 'active' : ''}
+                    onClick={() => {
+                      setLibraryTab('recent');
+                      setPage(1);
+                    }}
                   >
-                    <ChevronRight size={18} />
+                    <Clock3 size={17} />
+                    {t.recent}
+                    <span>{recent.length}</span>
+                  </button>
+                  <button className="save-info-button" onClick={() => setInfo('saves')}>
+                    <Info size={15} />
+                    {t.saveTitle}
                   </button>
                 </div>
-              </nav>
-            )}
-          </section>
-          {isHome && (
-            <section className="collection-banner">
-              <div className="banner-symbol" aria-hidden="true">
-                ✳
+              )}
+              <div className="filter-bar">
+                <div className="category-scroll" aria-label={t.allCategories}>
+                  {['All games', 'Racing', 'Action', 'Puzzle', 'Adventure', '2 Player', 'Arcade']
+                    .filter(
+                      (name) =>
+                        name === 'All games' || categories.some((item) => item.name === name),
+                    )
+                    .map((name) => {
+                      const Icon =
+                        categoryIcons[name] || (name === 'All games' ? Grid2X2 : Compass);
+                      return (
+                        <button
+                          className={category === name ? 'active' : ''}
+                          aria-pressed={category === name}
+                          key={name}
+                          onClick={() => selectCategory(name)}
+                        >
+                          <Icon size={16} />
+                          {categoryName(name, language)}
+                        </button>
+                      );
+                    })}
+                </div>
+                <button
+                  className={`touch-switch ${touchOnly ? 'active' : ''}`}
+                  role="switch"
+                  aria-checked={touchOnly}
+                  title={t.touchHint}
+                  onClick={() => {
+                    setTouchOnly((value) => !value);
+                    setPage(1);
+                  }}
+                >
+                  <Hand size={17} />
+                  <span>{t.touch}</span>
+                  <span className="switch-track">
+                    <i />
+                  </span>
+                </button>
               </div>
-              <div>
-                <span className="eyebrow">BETTER TOGETHER</span>
-                <h2>Good games. Great company.</h2>
-                <p>Grab a friend. A little friendly competition never hurt.</p>
+              <div className="filter-options">
+                <label>
+                  <SlidersHorizontal size={14} />
+                  <select
+                    aria-label={t.allCategories}
+                    value={category}
+                    onChange={(event) => selectCategory(event.target.value)}
+                  >
+                    <option value="All games">{t.allCategories}</option>
+                    {categories.map((item) => (
+                      <option value={item.name} key={item.name}>
+                        {categoryName(item.name, language)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={13} />
+                </label>
+                <div>
+                  <label>
+                    <select
+                      aria-label={t.source}
+                      value={source}
+                      onChange={(event) => {
+                        setSource(event.target.value);
+                        setPage(1);
+                      }}
+                    >
+                      <option value="">{t.allProviders}</option>
+                      <option>GameMonetize</option>
+                      <option>PlayKovo</option>
+                    </select>
+                    <ChevronDown size={13} />
+                  </label>
+                  <label>
+                    <select
+                      aria-label={t.sort}
+                      value={sort}
+                      onChange={(event) => {
+                        setSort(event.target.value);
+                        setPage(1);
+                      }}
+                    >
+                      <option value="discovery">{t.sortPicks}</option>
+                      <option value="newest">{t.sortNewest}</option>
+                      <option value="az">{t.sortAz}</option>
+                    </select>
+                    <ChevronDown size={13} />
+                  </label>
+                </div>
               </div>
-              <button onClick={() => navigate('all', '2 Player')}>
-                Explore 2 player <ArrowUpRight size={18} />
-              </button>
+              {(error || manifestError) && (
+                <div className="error-banner" role="alert">
+                  {error === 'game' ? t.gameError : t.loadError}
+                  <button className="text-button" onClick={() => window.location.reload()}>
+                    {t.retry}
+                    <ArrowUpRight size={15} />
+                  </button>
+                </div>
+              )}
+              <div className={`game-grid ${busy ? 'loading' : ''}`} aria-busy={busy}>
+                {result.games.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    onOpen={openGame}
+                    saved={saved.includes(game.id)}
+                    onSave={toggleSaved}
+                    record={view === 'library' && libraryTab === 'recent' ? records[game.id] : null}
+                  />
+                ))}
+                {busy &&
+                  !result.games.length &&
+                  Array.from({ length: 12 }, (_, index) => (
+                    <div className="skeleton-card" key={index}>
+                      <div />
+                      <span />
+                      <small />
+                    </div>
+                  ))}
+              </div>
+              {!busy && !result.games.length && !error && (
+                <div className="empty-state">
+                  {view === 'library' ? (
+                    libraryTab === 'saved' ? (
+                      <Bookmark size={34} />
+                    ) : (
+                      <Clock3 size={34} />
+                    )
+                  ) : (
+                    <Search size={34} />
+                  )}
+                  <h3>
+                    {view === 'library'
+                      ? libraryTab === 'saved'
+                        ? t.noSaved
+                        : t.noHistory
+                      : t.noResults}
+                  </h3>
+                  <p>
+                    {view === 'library'
+                      ? libraryTab === 'saved'
+                        ? t.noSavedText
+                        : t.noHistoryText
+                      : t.noResultsText}
+                  </p>
+                  <button className="primary-button" onClick={() => navigate('all')}>
+                    {t.browse}
+                    <ArrowRight size={17} />
+                  </button>
+                </div>
+              )}
+              {result.pages > 1 && (
+                <nav className="pagination" aria-label={t.page}>
+                  <span>
+                    {t.page} <strong>{format(result.page)}</strong> {t.of} {format(result.pages)}
+                  </span>
+                  <div>
+                    <button
+                      className="page-arrow"
+                      aria-label={t.previous}
+                      disabled={busy || result.page === 1}
+                      onClick={() => jump(result.page - 1)}
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    {pageNumbers.map((number, index) => (
+                      <React.Fragment key={number}>
+                        {index > 0 && number - pageNumbers[index - 1] > 1 && <span>…</span>}
+                        <button
+                          disabled={busy}
+                          className={number === result.page ? 'active' : ''}
+                          aria-label={`${t.page} ${number}`}
+                          aria-current={number === result.page ? 'page' : undefined}
+                          onClick={() => jump(number)}
+                        >
+                          {format(number)}
+                        </button>
+                      </React.Fragment>
+                    ))}
+                    <button
+                      className="page-arrow"
+                      aria-label={t.next}
+                      disabled={busy || result.page === result.pages}
+                      onClick={() => jump(result.page + 1)}
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                  </div>
+                </nav>
+              )}
             </section>
-          )}
-          <div className="value-strip">
-            <span>
-              <Gamepad2 size={18} /> Thousands of ways to play
-            </span>
-            <span>
-              <Zap size={18} /> No downloads, ever
-            </span>
-            <span>
-              <Heart size={18} /> A little fun for everyone
-            </span>
-          </div>
-          <footer>
+          </>
+        )}
+        {!persistent && (
+          <p className="storage-warning" role="status">
+            <Info size={16} />
+            {t.sessionOnly}
+          </p>
+        )}
+        <footer className="site-footer">
+          <div>
             <button className="footer-brand" onClick={() => navigate('discover')}>
-              <Mark small />
-              <strong>
-                unblockedgames<span>.</span>
-              </strong>
+              <Brand />
             </button>
-            <p>Your downtime. Upgraded.</p>
-            <div>
-              <button onClick={() => setInfo('about')}>About the games</button>
-              <button onClick={() => setInfo('privacy')}>Privacy</button>
-              <a
-                href="https://github.com/hxracan/hxracan.github.io"
-                target="_blank"
-                rel="noreferrer"
-              >
-                GitHub <ArrowUpRight size={12} />
-              </a>
-            </div>
-          </footer>
-        </main>
-      </div>
-      {selected && (
-        <Player
-          key={selected.id}
-          selection={selected}
-          onClose={closePlayer}
-          favorites={favorites}
-          onFavorite={toggleFavorite}
-          onPlayed={markPlayed}
+            <p>{t.footer}</p>
+          </div>
+          <div className="footer-links">
+            <button onClick={() => setInfo('about')}>{t.about}</button>
+            <button onClick={() => setInfo('privacy')}>{t.privacy}</button>
+            <a href="https://github.com/hxracan/hxracan.github.io" target="_blank" rel="noreferrer">
+              GitHub
+              <ArrowUpRight size={14} />
+            </a>
+            <button
+              className="back-top"
+              aria-label={t.backTop}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              <ArrowUp size={20} />
+            </button>
+          </div>
+        </footer>
+      </main>
+      <nav className="bottom-nav" aria-label={t.browse}>
+        {[
+          [Compass, t.discover, () => navigate('discover'), view === 'discover'],
+          [Grid2X2, t.browse, () => navigate('all'), view === 'all'],
+          [
+            Bookmark,
+            t.saved,
+            () => navigate('library', 'saved'),
+            view === 'library' && libraryTab === 'saved',
+          ],
+          [
+            Clock3,
+            t.recent,
+            () => navigate('library', 'recent'),
+            view === 'library' && libraryTab === 'recent',
+          ],
+          [Settings2, t.settings, () => navigate('settings'), view === 'settings'],
+        ].map(([Icon, label, action, active]) => (
+          <button className={active ? 'active' : ''} key={label} onClick={action}>
+            <Icon size={21} />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
+      {session && !current && !selection && (
+        <aside className="session-dock">
+          <Thumbnail game={session.game} />
+          <div>
+            <span>
+              <span className="status-dot" />
+              {t.stillOpen}
+            </span>
+            <strong>{session.game.title}</strong>
+          </div>
+          <button aria-label={t.returnGame} onClick={() => openGame(session.game)}>
+            <Play size={20} fill="currentColor" />
+          </button>
+        </aside>
+      )}
+      <Player
+        selection={selection}
+        session={session}
+        preferences={preferences}
+        onLaunch={launch}
+        onMinimize={minimize}
+        onStop={stop}
+        saved={Boolean(selection && saved.includes(selection.id))}
+        onSave={toggleSaved}
+        onSaveInfo={() => setInfo('saves')}
+      />
+      {info && (
+        <InfoDialog
+          type={info}
+          manifest={manifest}
+          persistent={persistent}
+          onClose={closeInfo}
+          onClear={clearLocal}
         />
       )}
-      {info && (
-        <Dialog
-          title={info === 'about' ? 'About the games' : 'Privacy'}
-          onClose={() => setInfo('')}
-          className="info-dialog"
-        >
-          <button className="icon-button info-close" onClick={() => setInfo('')} aria-label="Close">
-            <X />
-          </button>
-          <Mark />
-          <h2>{info === 'about' ? 'A whole lot of play.' : 'Your browser. Your collection.'}</h2>
-          {info === 'about' ? (
-            <>
-              <p>
-                unblockedgames brings together {format(manifest?.count)} games from publisher
-                distribution feeds. Games, icons, names, and other assets belong to their respective
-                developers and rights holders.
-              </p>
-              <p>
-                Games run directly from{' '}
-                <a href="https://gamemonetize.com/faq" target="_blank" rel="noreferrer">
-                  GameMonetize
-                </a>{' '}
-                and{' '}
-                <a href="https://playkovo.com/partners/terms" target="_blank" rel="noreferrer">
-                  PlayKovo
-                </a>
-                . Their branding, advertising, and credits are preserved. This site isn’t affiliated
-                with Poki or Playvio.
-              </p>
-              <p>
-                The catalog includes every valid game returned by these feeds at the latest sync.
-                Provider availability, device support, and network restrictions can affect
-                individual games.
-              </p>
-              <p className="info-meta">
-                Catalog updated:{' '}
-                {manifest ? new Date(manifest.updatedAt).toLocaleDateString('en-GB') : 'Loading…'}
-              </p>
-            </>
-          ) : (
-            <>
-              <p>
-                Favorites and recently played games are saved in this browser’s local storage. This
-                site has no account system and adds no analytics or advertising scripts of its own.
-              </p>
-              <p>
-                Game thumbnail requests go to the image providers. Opening a game loads a
-                third-party embed that may use cookies, ads, and analytics under the provider’s own
-                policy. GitHub Pages handles hosting requests. Google Fonts serves the interface
-                font.
-              </p>
-              <p>
-                <a href="https://gamemonetize.com/privacy-policy" target="_blank" rel="noreferrer">
-                  GameMonetize privacy
-                </a>{' '}
-                ·{' '}
-                <a href="https://playkovo.com/privacy" target="_blank" rel="noreferrer">
-                  PlayKovo privacy
-                </a>{' '}
-                ·{' '}
-                <a
-                  href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  GitHub privacy
-                </a>
-              </p>
-              <button
-                className="clear-data"
-                onClick={() => {
-                  setFavorites([]);
-                  setRecent([]);
-                  setInfo('cleared');
-                }}
-              >
-                Clear saved games on this device
-              </button>
-              {info === 'cleared' && (
-                <p role="status">
-                  <Check size={16} /> Your saved games have been cleared.
-                </p>
-              )}
-            </>
-          )}
-        </Dialog>
-      )}
-    </>
+    </LanguageContext.Provider>
   );
 }
+
 createRoot(document.getElementById('root')).render(<App />);

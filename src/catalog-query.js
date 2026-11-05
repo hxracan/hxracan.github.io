@@ -8,6 +8,7 @@ export const unpack = (row) => ({
       ? `https://img.gamemonetize.com/${row[4]}/512x384.jpg`
       : row[4],
   provider: row[0].startsWith('gm-') ? 'GameMonetize' : 'PlayKovo',
+  touch: row[5] === true,
 });
 export function queryGames(
   rows,
@@ -19,6 +20,7 @@ export function queryGames(
     limit = 24,
     ids = null,
     source = '',
+    touchOnly = false,
   } = {},
 ) {
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -28,6 +30,7 @@ export function queryGames(
       words.every((w) => `${g[1]} ${g[2]} ${g[3]}`.toLowerCase().includes(w)),
     );
   if (category !== 'All games') list = list.filter((g) => g[2] === category);
+  if (touchOnly) list = list.filter((g) => g[5] === true);
   if (source)
     list = list.filter((g) => (g[0].startsWith('gm-') ? 'GameMonetize' : 'PlayKovo') === source);
   if (sort === 'az') list = [...list].sort((a, b) => a[1].localeCompare(b[1]));

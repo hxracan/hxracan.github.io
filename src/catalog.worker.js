@@ -1,7 +1,7 @@
 import { queryGames } from './catalog-query';
 let loading;
 const load = () =>
-  (loading ||= fetch(`${import.meta.env.BASE_URL}catalog/index.json`)
+  (loading ||= fetch(`${import.meta.env.BASE_URL}catalog/index.json`, { cache: 'no-cache' })
     .then((r) => {
       if (!r.ok) throw new Error('Could not load the game library.');
       return r.json();

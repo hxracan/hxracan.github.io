@@ -2,6 +2,16 @@ import { readFile, mkdir, writeFile, readdir, unlink } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const catalog = JSON.parse(await readFile(`${root}/data/catalog.json`, 'utf8'));
+let mobileIds = new Set();
+try {
+  mobileIds = new Set(JSON.parse(await readFile(`${root}/data/mobile-ids.json`, 'utf8')));
+} catch {}
+for (const game of catalog.games) {
+  game.touch =
+    game.provider === 'PlayKovo'
+      ? ['all', 'mobile'].includes(game.devices)
+      : mobileIds.has(game.id) || game.touch === true;
+}
 await mkdir(`${root}/public/catalog`, { recursive: true });
 const groups = new Map();
 for (const g of catalog.games) {
@@ -22,6 +32,7 @@ const index = catalog.games.map((g) => [
   g.id.startsWith('gm-')
     ? g.thumbnail.match(/gamemonetize\.com\/([^/]+)/)?.[1] || g.thumbnail
     : g.thumbnail,
+  g.touch,
 ]);
 await Promise.all(
   [...groups].map(([key, games]) =>
@@ -35,16 +46,30 @@ await writeFile(
     count: catalog.count,
     updatedAt: catalog.updatedAt,
     sources: catalog.sources,
+    touchCount: catalog.games.filter((g) => g.touch).length,
     categories,
+    spotlight: [
+      'pk-moxriding',
+      'pk-paintballz-io',
+      'pk-longcat',
+      'pk-gravity-flip',
+      'pk-pixel-paint',
+      'pk-stack-jump',
+      'pk-hexa-go',
+      'pk-cube-slide-merge',
+    ]
+      .map((id) => catalog.games.find((g) => g.id === id))
+      .filter(Boolean),
     featured: catalog.games
       .slice(0, 24)
-      .map(({ id, title, category, tags, thumbnail, provider }) => ({
+      .map(({ id, title, category, tags, thumbnail, provider, touch }) => ({
         id,
         title,
         category,
         tags,
         thumbnail,
         provider,
+        touch,
       })),
   }),
 );
