@@ -3,9 +3,7 @@ import { createRoot } from 'react-dom/client';
 import {
   ArrowRight,
   ArrowUp,
-  ArrowUpRight,
   Bookmark,
-  Car,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -16,16 +14,11 @@ import {
   Info,
   Moon,
   Play,
-  Puzzle,
   Search,
   Settings2,
   Shuffle,
-  SlidersHorizontal,
   Sun,
-  Target,
-  Users,
   X,
-  Zap,
 } from 'lucide-react';
 import { queryCatalog, getGame } from './catalog-client';
 import { LanguageContext, Brand, Thumbnail, GameCard, InfoDialog } from './UI';
@@ -38,15 +31,6 @@ import { addTime, startRecord, validRecords } from './storage';
 import './styles.css';
 
 const validIds = (value) => Array.isArray(value) && value.every((id) => typeof id === 'string');
-const categoryIcons = {
-  Racing: Car,
-  Puzzle: Puzzle,
-  Action: Zap,
-  Shooting: Target,
-  '2 Player': Users,
-  Multiplayer: Users,
-};
-
 function App() {
   const [language, setLanguage, languageSaved] = useLocalState(
     'unblockedgames.language',
@@ -93,16 +77,14 @@ function App() {
     [page, setPage] = useState(1);
   const [result, setResult] = useState({ games: [], total: 0, page: 1, pages: 1 }),
     [busy, setBusy] = useState(true),
-    [error, setError] = useState(''),
-    [searchOpen, setSearchOpen] = useState(false);
+    [error, setError] = useState('');
   const [selection, setSelection] = useState(null),
     [session, setSession] = useState(null),
     [info, setInfo] = useState(''),
     [showContinue, setShowContinue] = useState(true),
     [legacyLast, setLegacyLast] = useState(null);
   const searchInput = useRef(null),
-    library = useRef(null),
-    touchRow = useRef(null);
+    library = useRef(null);
   const deferredQuery = useDeferredValue(query),
     t = messages[language];
   const persistent =
@@ -221,7 +203,6 @@ function App() {
     setTouchOnly(preferences.touchDefault);
     setSort(next === 'discover' ? 'discovery' : 'newest');
     setPage(1);
-    setSearchOpen(false);
     window.scrollTo({ top: 0, behavior: scrollBehavior });
   };
   const openGame = (game) => {
@@ -262,7 +243,6 @@ function App() {
     }
   };
   const focusSearch = () => {
-    setSearchOpen(true);
     window.setTimeout(() => searchInput.current?.focus(), 0);
   };
   const shortcuts = useStableEvent((event) => {
@@ -273,7 +253,7 @@ function App() {
     ) {
       event.preventDefault();
       focusSearch();
-    } else if (event.key === 'Escape') setSearchOpen(false);
+    }
   });
   useEffect(() => {
     document.addEventListener('keydown', shortcuts);
@@ -358,6 +338,9 @@ function App() {
   const timeLabel = (record) =>
     record.seconds < 60 ? t.underMinute : `${format(Math.floor(record.seconds / 60))} ${t.minutes}`;
 
+  const showPicks = isHome && page === 1 && category === 'All games' && !source && !touchOnly;
+  const pickIds = new Set(showPicks ? spotlight.map((game) => game.id) : []);
+
   return (
     <LanguageContext.Provider value={{ language, t }}>
       <a className="skip-link" href="#game-library">
@@ -372,31 +355,26 @@ function App() {
           >
             <Brand />
           </button>
-          <nav className="main-nav" aria-label={t.browse}>
-            {[
-              ['discover', t.discover],
-              ['all', t.browse],
-              ['library', t.library],
-            ].map(([id, label]) => (
-              <button
-                key={id}
-                className={view === id ? 'active' : ''}
-                aria-current={view === id ? 'page' : undefined}
-                onClick={() => navigate(id)}
-              >
-                {label}
-                {id === 'library' && saved.length > 0 && <span>{saved.length}</span>}
-              </button>
-            ))}
-          </nav>
-          <div className="header-tools">
-            <button
-              className="icon-button header-search-button"
-              onClick={focusSearch}
+          <label className="header-search">
+            <Search size={18} />
+            <input
+              ref={searchInput}
+              value={query}
+              onChange={(event) => searchChange(event.target.value)}
+              placeholder={t.searchPlaceholder}
               aria-label={t.search}
-            >
-              <Search size={21} />
-            </button>
+            />
+            {query && (
+              <button
+                className="icon-button clear-search"
+                onClick={() => searchChange('')}
+                aria-label={t.reset}
+              >
+                <X size={17} />
+              </button>
+            )}
+          </label>
+          <div className="header-tools">
             <button
               className="icon-button theme-toggle"
               onClick={() => setTheme((value) => (value === 'dark' ? 'light' : 'dark'))}
@@ -432,26 +410,33 @@ function App() {
             </div>
           </div>
         </div>
-        <div className={`search-drawer ${searchOpen ? 'open' : ''}`} hidden={!searchOpen}>
-          <label>
-            <Search size={22} />
-            <input
-              ref={searchInput}
-              value={query}
-              onChange={(event) => searchChange(event.target.value)}
-              placeholder={t.searchPlaceholder}
-              aria-label={t.search}
-            />
-            {query && (
-              <button className="icon-button" onClick={() => searchChange('')} aria-label={t.reset}>
-                <X size={18} />
-              </button>
-            )}
-          </label>
-          <button className="text-button" onClick={() => setSearchOpen(false)}>
-            {t.close}
+        <nav className="main-nav" aria-label={t.browse}>
+          <button
+            className={view === 'discover' ? 'active' : ''}
+            onClick={() => navigate('discover')}
+          >
+            {t.discover}
           </button>
-        </div>
+          <button className={view === 'all' ? 'active' : ''} onClick={() => navigate('all')}>
+            {t.browse}
+          </button>
+          <button
+            className={view === 'library' && libraryTab === 'saved' ? 'active' : ''}
+            onClick={() => navigate('library', 'saved')}
+          >
+            {t.saved}
+            {saved.length > 0 && <span>{saved.length}</span>}
+          </button>
+          <button
+            className={view === 'library' && libraryTab === 'recent' ? 'active' : ''}
+            onClick={() => navigate('library', 'recent')}
+          >
+            {t.recent}
+          </button>
+          <span className="nav-catalog">
+            {manifest ? format(manifest.count) : '38,628'} {t.results}
+          </span>
+        </nav>
       </header>
       <main className="main-content">
         {view === 'settings' ? (
@@ -477,200 +462,49 @@ function App() {
           />
         ) : (
           <>
-            {isHome && (
-              <>
-                <div className="intro">
-                  <div>
-                    <span className="eyebrow intro-eyebrow">
-                      <span className="orange-dash" />
-                      {t.arcade}
-                    </span>
-                    <h1>{t.heading}</h1>
-                    <p>{t.subtitle}</p>
-                  </div>
-                  <div className="catalog-stat">
-                    <strong>
-                      {manifest ? format(manifest.count) : '38k+'}
-                      <span>↗</span>
-                    </strong>
-                    <span>{t.catalog}</span>
-                  </div>
+            {isHome && lastGame && showContinue && preferences.showContinue && (
+              <section className="continue-banner" aria-label={t.continueQuestion}>
+                <span className="continue-art">
+                  <Thumbnail game={lastGame} />
+                </span>
+                <div>
+                  <h2>{t.continueQuestion}</h2>
+                  <p>
+                    {lastGame.title}
+                    {history[0] && (
+                      <>
+                        <span>·</span>
+                        {timeLabel(history[0])}
+                        <span>·</span>
+                        {relativeDate(history[0].lastPlayed, language)}
+                      </>
+                    )}
+                  </p>
                 </div>
-                {lastGame && showContinue && preferences.showContinue && (
-                  <section className="continue-banner" aria-label={t.continueQuestion}>
-                    <span className="continue-art">
-                      <Thumbnail game={lastGame} />
-                    </span>
-                    <div>
-                      <span className="eyebrow">{t.welcomeBack}</span>
-                      <h2>{t.continueQuestion}</h2>
-                      <p>
-                        {lastGame.title}
-                        {history[0] && (
-                          <>
-                            <span>·</span>
-                            {timeLabel(history[0])}
-                            <span>·</span>
-                            {relativeDate(history[0].lastPlayed, language)}
-                          </>
-                        )}
-                      </p>
-                    </div>
-                    <button className="primary-button" onClick={() => openGame(lastGame)}>
-                      <Play size={16} fill="currentColor" />
-                      {t.continue}
-                    </button>
-                    <button
-                      className="icon-button dismiss-continue"
-                      aria-label={t.later}
-                      onClick={() => setShowContinue(false)}
-                    >
-                      <X size={18} />
-                    </button>
-                  </section>
-                )}
-                <section className="spotlight-grid" aria-label={t.spotlight}>
-                  {spotlight[0] ? (
-                    <article className="spotlight-main">
-                      <Thumbnail game={spotlight[0]} cover eager />
-                      <div className="spotlight-shade" />
-                      <div className="spotlight-top">
-                        <span className="feature-badge">
-                          <span className="status-dot" />
-                          {t.spotlight}
-                        </span>
-                        <button
-                          className={`glass-button ${saved.includes(spotlight[0].id) ? 'is-saved' : ''}`}
-                          onClick={() => toggleSaved(spotlight[0].id)}
-                          aria-label={`${saved.includes(spotlight[0].id) ? t.unsave : t.save}: ${spotlight[0].title}`}
-                          aria-pressed={saved.includes(spotlight[0].id)}
-                        >
-                          <Bookmark
-                            size={20}
-                            fill={saved.includes(spotlight[0].id) ? 'currentColor' : 'none'}
-                          />
-                        </button>
-                      </div>
-                      <div className="spotlight-copy">
-                        <span className="feature-category">
-                          <Hand size={14} />
-                          {t.touch}
-                          <span>/</span>
-                          {spotlight[0].provider}
-                        </span>
-                        <h2>
-                          {spotlight[0].title}
-                          <span>↗</span>
-                        </h2>
-                        <p>{t.heroLine}</p>
-                        <button className="primary-button" onClick={() => openGame(spotlight[0])}>
-                          <Play size={17} fill="currentColor" />
-                          {t.play}
-                          <ArrowUpRight size={19} />
-                        </button>
-                      </div>
-                      <span className="feature-edition">01 / {t.skateRace}</span>
-                    </article>
-                  ) : (
-                    <div className="feature-skeleton" />
-                  )}
-                  <div className="spotlight-side">
-                    {spotlight.slice(1, 3).map((game, index) => (
-                      <button
-                        key={game.id}
-                        className="side-feature"
-                        onClick={() => openGame(game)}
-                        aria-label={`${t.openGame}: ${game.title}`}
-                      >
-                        <Thumbnail game={game} cover eager />
-                        <div className="side-shade" />
-                        <span className="side-category">
-                          {categoryName(game.category, language)}
-                          <ArrowUpRight size={21} />
-                        </span>
-                        <div>
-                          <h3>{game.title}</h3>
-                          <p>{index === 0 ? t.sideOne : t.sideTwo}</p>
-                        </div>
-                        <span className="side-play">
-                          <Play size={16} fill="currentColor" />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-                <section className="touch-section">
-                  <div className="row-heading">
-                    <div>
-                      <span className="eyebrow">
-                        <Hand size={13} />
-                        {t.touchPicks}
-                      </span>
-                      <h2>{t.touchTitle}</h2>
-                      <p>{t.touchSubtitle}</p>
-                    </div>
-                    <div className="row-actions">
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          navigate('all');
-                          setTouchOnly(true);
-                        }}
-                      >
-                        {t.viewAll}
-                        <ArrowUpRight size={16} />
-                      </button>
-                      <button
-                        className="icon-button row-arrow"
-                        aria-label={t.previous}
-                        onClick={() =>
-                          touchRow.current?.scrollBy({ left: -440, behavior: scrollBehavior })
-                        }
-                      >
-                        <ChevronLeft size={19} />
-                      </button>
-                      <button
-                        className="icon-button row-arrow"
-                        aria-label={t.next}
-                        onClick={() =>
-                          touchRow.current?.scrollBy({ left: 440, behavior: scrollBehavior })
-                        }
-                      >
-                        <ChevronRight size={19} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="touch-row" ref={touchRow}>
-                    {spotlight.slice(3).map((game) => (
-                      <GameCard
-                        key={game.id}
-                        game={game}
-                        onOpen={openGame}
-                        saved={saved.includes(game.id)}
-                        onSave={toggleSaved}
-                      />
-                    ))}
-                  </div>
-                </section>
-              </>
+                <button className="primary-button" onClick={() => openGame(lastGame)}>
+                  <Play size={15} fill="currentColor" />
+                  {t.continue}
+                </button>
+                <button
+                  className="icon-button dismiss-continue"
+                  aria-label={t.later}
+                  onClick={() => setShowContinue(false)}
+                >
+                  <X size={17} />
+                </button>
+              </section>
             )}
             <section className="library-section" id="game-library" ref={library}>
               <div className="library-heading">
-                <div>
-                  <span className="eyebrow">
-                    {view === 'library' ? t.libraryStatus : query ? t.search : t.browse}
-                  </span>
-                  <h2>{heading}</h2>
-                  <span className="results-count" aria-live="polite">
-                    {busy || query !== deferredQuery
-                      ? t.loading
-                      : `${format(result.total)} ${result.total === 1 ? t.result : t.results}`}
-                  </span>
-                </div>
+                <h1>{isHome ? t.heading : heading}</h1>
+                <span className="results-count" aria-live="polite">
+                  {busy || query !== deferredQuery
+                    ? t.loading
+                    : `${format(result.total)} ${result.total === 1 ? t.result : t.results}`}
+                </span>
                 <button className="surprise-button" onClick={random}>
-                  <Shuffle size={17} />
+                  <Shuffle size={16} />
                   <span>{t.surprise}</span>
-                  <ArrowUpRight size={16} />
                 </button>
               </div>
               {view === 'library' && (
@@ -682,7 +516,7 @@ function App() {
                       setPage(1);
                     }}
                   >
-                    <Bookmark size={17} />
+                    <Bookmark size={16} />
                     {t.saved}
                     <span>{saved.length}</span>
                   </button>
@@ -693,7 +527,7 @@ function App() {
                       setPage(1);
                     }}
                   >
-                    <Clock3 size={17} />
+                    <Clock3 size={16} />
                     {t.recent}
                     <span>{recent.length}</span>
                   </button>
@@ -710,21 +544,16 @@ function App() {
                       (name) =>
                         name === 'All games' || categories.some((item) => item.name === name),
                     )
-                    .map((name) => {
-                      const Icon =
-                        categoryIcons[name] || (name === 'All games' ? Grid2X2 : Compass);
-                      return (
-                        <button
-                          className={category === name ? 'active' : ''}
-                          aria-pressed={category === name}
-                          key={name}
-                          onClick={() => selectCategory(name)}
-                        >
-                          <Icon size={16} />
-                          {categoryName(name, language)}
-                        </button>
-                      );
-                    })}
+                    .map((name) => (
+                      <button
+                        className={category === name ? 'active' : ''}
+                        aria-pressed={category === name}
+                        key={name}
+                        onClick={() => selectCategory(name)}
+                      >
+                        {categoryName(name, language)}
+                      </button>
+                    ))}
                 </div>
                 <button
                   className={`touch-switch ${touchOnly ? 'active' : ''}`}
@@ -736,7 +565,7 @@ function App() {
                     setPage(1);
                   }}
                 >
-                  <Hand size={17} />
+                  <Hand size={16} />
                   <span>{t.touch}</span>
                   <span className="switch-track">
                     <i />
@@ -745,7 +574,6 @@ function App() {
               </div>
               <div className="filter-options">
                 <label>
-                  <SlidersHorizontal size={14} />
                   <select
                     aria-label={t.allCategories}
                     value={category}
@@ -758,7 +586,7 @@ function App() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={13} />
+                  <ChevronDown size={12} />
                 </label>
                 <div>
                   <label>
@@ -774,7 +602,7 @@ function App() {
                       <option>GameMonetize</option>
                       <option>PlayKovo</option>
                     </select>
-                    <ChevronDown size={13} />
+                    <ChevronDown size={12} />
                   </label>
                   <label>
                     <select
@@ -789,7 +617,7 @@ function App() {
                       <option value="newest">{t.sortNewest}</option>
                       <option value="az">{t.sortAz}</option>
                     </select>
-                    <ChevronDown size={13} />
+                    <ChevronDown size={12} />
                   </label>
                 </div>
               </div>
@@ -798,41 +626,56 @@ function App() {
                   {error === 'game' ? t.gameError : t.loadError}
                   <button className="text-button" onClick={() => window.location.reload()}>
                     {t.retry}
-                    <ArrowUpRight size={15} />
                   </button>
                 </div>
               )}
-              <div className={`game-grid ${busy ? 'loading' : ''}`} aria-busy={busy}>
-                {result.games.map((game) => (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    onOpen={openGame}
-                    saved={saved.includes(game.id)}
-                    onSave={toggleSaved}
-                    record={view === 'library' && libraryTab === 'recent' ? records[game.id] : null}
-                  />
-                ))}
-                {busy &&
-                  !result.games.length &&
-                  Array.from({ length: 12 }, (_, index) => (
-                    <div className="skeleton-card" key={index}>
-                      <div />
-                      <span />
-                      <small />
-                    </div>
+              <div className="portal-game-wall">
+                {showPicks &&
+                  spotlight.map((game, index) => (
+                    <GameCard
+                      key={`pick-${game.id}`}
+                      game={game}
+                      featured={index === 0}
+                      onOpen={openGame}
+                      saved={saved.includes(game.id)}
+                      onSave={toggleSaved}
+                    />
                   ))}
+                <div className="game-grid" aria-busy={busy}>
+                  {result.games
+                    .filter((game) => !pickIds.has(game.id))
+                    .map((game) => (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        onOpen={openGame}
+                        saved={saved.includes(game.id)}
+                        onSave={toggleSaved}
+                        record={
+                          view === 'library' && libraryTab === 'recent' ? records[game.id] : null
+                        }
+                      />
+                    ))}
+                  {busy &&
+                    !result.games.length &&
+                    Array.from({ length: 12 }, (_, index) => (
+                      <div className="skeleton-card" key={index}>
+                        <div />
+                        <span />
+                      </div>
+                    ))}
+                </div>
               </div>
               {!busy && !result.games.length && !error && (
                 <div className="empty-state">
                   {view === 'library' ? (
                     libraryTab === 'saved' ? (
-                      <Bookmark size={34} />
+                      <Bookmark size={30} />
                     ) : (
-                      <Clock3 size={34} />
+                      <Clock3 size={30} />
                     )
                   ) : (
-                    <Search size={34} />
+                    <Search size={30} />
                   )}
                   <h3>
                     {view === 'library'
@@ -850,7 +693,7 @@ function App() {
                   </p>
                   <button className="primary-button" onClick={() => navigate('all')}>
                     {t.browse}
-                    <ArrowRight size={17} />
+                    <ArrowRight size={16} />
                   </button>
                 </div>
               )}
@@ -866,7 +709,7 @@ function App() {
                       disabled={busy || result.page === 1}
                       onClick={() => jump(result.page - 1)}
                     >
-                      <ChevronLeft size={20} />
+                      <ChevronLeft size={19} />
                     </button>
                     {pageNumbers.map((number, index) => (
                       <React.Fragment key={number}>
@@ -888,7 +731,7 @@ function App() {
                       disabled={busy || result.page === result.pages}
                       onClick={() => jump(result.page + 1)}
                     >
-                      <ChevronRight size={20} />
+                      <ChevronRight size={19} />
                     </button>
                   </div>
                 </nav>
@@ -903,25 +746,18 @@ function App() {
           </p>
         )}
         <footer className="site-footer">
-          <div>
-            <button className="footer-brand" onClick={() => navigate('discover')}>
-              <Brand />
-            </button>
-            <p>{t.footer}</p>
-          </div>
+          <span>unblockedgames</span>
           <div className="footer-links">
             <button onClick={() => setInfo('about')}>{t.about}</button>
             <button onClick={() => setInfo('privacy')}>{t.privacy}</button>
             <a href="https://github.com/hxracan/hxracan.github.io" target="_blank" rel="noreferrer">
               GitHub
-              <ArrowUpRight size={14} />
             </a>
             <button
-              className="back-top"
               aria-label={t.backTop}
               onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior })}
             >
-              <ArrowUp size={20} />
+              <ArrowUp size={17} />
             </button>
           </div>
         </footer>
@@ -945,7 +781,7 @@ function App() {
           [Settings2, t.settings, () => navigate('settings'), view === 'settings'],
         ].map(([Icon, label, action, active]) => (
           <button className={active ? 'active' : ''} key={label} onClick={action}>
-            <Icon size={21} />
+            <Icon size={20} />
             <span>{label}</span>
           </button>
         ))}
@@ -961,7 +797,7 @@ function App() {
             <strong>{session.game.title}</strong>
           </div>
           <button aria-label={t.returnGame} onClick={() => openGame(session.game)}>
-            <Play size={20} fill="currentColor" />
+            <Play size={19} fill="currentColor" />
           </button>
         </aside>
       )}

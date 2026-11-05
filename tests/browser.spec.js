@@ -32,7 +32,7 @@ test('iPad settings, language, theme, touch defaults, and backups persist', asyn
   await ready(page);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.getByRole('button', { name: 'Deutsch', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Noch eine Runde.', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Spiele', exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'de');
   await page
     .locator('.header-tools')
@@ -88,7 +88,7 @@ test('iPad settings, language, theme, touch defaults, and backups persist', asyn
   });
   await expect(page.locator('.settings-status')).toHaveText('Library imported.');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.locator('.main-nav').getByRole('button', { name: 'Discover', exact: true }).click();
+  await page.locator('.main-nav').getByRole('button', { name: 'Home', exact: true }).click();
   await expect(
     page.getByRole('region', { name: 'Continue your last game?', exact: true }),
   ).toBeVisible();
@@ -183,9 +183,7 @@ test('iPad layouts fit portrait and landscape, including German and large text',
       true,
     );
   }
-  await expect(
-    page.getByRole('heading', { name: 'Mach es dir gemütlich.', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Einstellungen', exact: true })).toBeVisible();
 });
 
 test('history can be disabled and session handling follows player settings', async ({ page }) => {

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Gamepad2, Bookmark, Hand, Play, ArrowUpRight, Clock3, X } from 'lucide-react';
+import { Gamepad2, Bookmark, Hand, ArrowUpRight, Clock3, X } from 'lucide-react';
 import { messages, categoryName } from './i18n';
 
 export const LanguageContext = createContext({ language: 'en', t: messages.en });
@@ -8,12 +8,8 @@ export const useLanguage = () => useContext(LanguageContext);
 export function Brand() {
   return (
     <span className="brand-content">
-      <span className="brand-icon">
-        <Gamepad2 size={23} strokeWidth={2.4} />
-      </span>
       <span>
         unblocked<span className="brand-soft">games</span>
-        <span className="brand-period">.</span>
       </span>
     </span>
   );
@@ -38,20 +34,17 @@ export function Thumbnail({ game, cover = false, eager = false, className = '' }
   );
 }
 
-export function GameCard({ game, onOpen, saved, onSave, record }) {
+export function GameCard({ game, onOpen, saved, onSave, record, featured = false }) {
   const { language, t } = useLanguage();
   return (
-    <article className="game-card">
+    <article className={`game-card ${featured ? 'featured-game' : ''}`}>
       <button
         className="game-card-open"
         onClick={() => onOpen(game)}
         aria-label={`${t.openGame}: ${game.title}`}
       >
         <div className="game-card-image">
-          <Thumbnail game={game} />
-          <span className="card-play">
-            <Play size={22} fill="currentColor" />
-          </span>
+          <Thumbnail game={game} cover={featured} eager={featured} />
           {record && (
             <span className="card-time">
               <Clock3 size={12} />
@@ -67,7 +60,6 @@ export function GameCard({ game, onOpen, saved, onSave, record }) {
               <>
                 <span className="meta-separator">/</span>
                 <Hand size={12} />
-                <span className="touch-text">Touch</span>
               </>
             )}
           </span>

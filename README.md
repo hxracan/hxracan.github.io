@@ -2,6 +2,8 @@
 
 A browser game library at [hxracan.github.io](https://hxracan.github.io). Built for iPad with a dark default, English and German interfaces, and the full imported GameMonetize and PlayKovo catalogs.
 
+The homepage opens directly to a dense game grid, with search, categories, saved games, and play history close at hand. The interface uses system fonts and has no promotional hero sections.
+
 The 5 November 2026 snapshot includes 38,628 games with publisher-provided icons and embed URLs. Of those, 22,854 are listed by their publishers as mobile compatible.
 
 ## Development
@@ -64,4 +66,4 @@ Games, artwork, titles, and other game assets belong to their respective develop
 
 This is a snapshot of these distribution feeds, not a copy of Poki or Playvio. Availability depends on the provider, device, and network. The website does not bypass network restrictions. Individual games may show third-party ads or use cookies.
 
-The website adds no analytics or advertising scripts of its own. Interface settings and library data remain in local storage. Google Fonts supplies the interface fonts. Game images and embeds load from their providers; GitHub Pages handles hosting requests.
+The website adds no analytics or advertising scripts of its own. Interface settings and library data remain in local storage. Game images and embeds load from their providers; GitHub Pages handles hosting requests.

@@ -329,12 +329,10 @@ export default function Settings({
             className="reset-settings"
             onClick={() => {
               setPending('reset');
-              document
-                .querySelector('.settings-group .data-actions')
-                ?.scrollIntoView({
-                  behavior: preferences.reducedMotion ? 'auto' : 'smooth',
-                  block: 'center',
-                });
+              document.querySelector('.settings-group .data-actions')?.scrollIntoView({
+                behavior: preferences.reducedMotion ? 'auto' : 'smooth',
+                block: 'center',
+              });
             }}
           >
             <RotateCcw size={16} />
