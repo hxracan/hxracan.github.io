@@ -145,6 +145,10 @@ export const messages = {
     prepare: 'Getting things ready…',
     launchNote: 'Hosted by',
     ads: 'Free to play. The game may show ads.',
+    adFree: 'Ad-free (built in)',
+    adFreeNote: 'Built in. No ads, and progress is saved on this device.',
+    fullscreen: 'Fullscreen',
+    reload: 'Restart game',
     back: 'Back to library',
     closeGame: 'Close game',
     close: 'Close',
@@ -157,7 +161,7 @@ export const messages = {
     providerText: 'Game descriptions and in-game language are supplied by the provider.',
     saveTitle: 'About your progress',
     saveText:
-      'We remember your last game, playtime, and saved games on this device. An open game stays loaded while you browse. Levels and scores are saved by the game itself, if it supports saving. Safari may restrict third-party game storage. There is no cross-device or cloud save.',
+      'We remember your last game, playtime, and saved games on this device. An open game stays loaded while you browse. Levels and scores are saved by the game itself, if it supports saving. Built-in ad-free games always save here and are included in library backups. Safari may restrict third-party game storage. There is no cross-device or cloud save.',
     sessionNote:
       'Back to library keeps this game loaded. Closing it or refreshing the page can lose progress the game has not saved.',
     switchTitle: 'Switch games?',
@@ -340,6 +344,10 @@ export const messages = {
     prepare: 'Dein Spiel wird vorbereitet…',
     launchNote: 'Gehostet von',
     ads: 'Kostenlos spielbar. Das Spiel kann Werbung zeigen.',
+    adFree: 'Werbefrei (eingebaut)',
+    adFreeNote: 'Eingebaut. Keine Werbung, Fortschritt wird auf diesem Gerät gespeichert.',
+    fullscreen: 'Vollbild',
+    reload: 'Spiel neu starten',
     back: 'Zurück zur Sammlung',
     closeGame: 'Spiel schließen',
     close: 'Schließen',
@@ -352,7 +360,7 @@ export const messages = {
     providerText: 'Spielbeschreibungen und die Sprache im Spiel kommen vom Anbieter.',
     saveTitle: 'Über deinen Spielfortschritt',
     saveText:
-      'Wir merken uns dein letztes Spiel, deine Spielzeit und deine Sammlung auf diesem Gerät. Ein geöffnetes Spiel bleibt beim Stöbern geladen. Level und Punktestände speichert das Spiel selbst, sofern es das unterstützt. Safari kann den Speicher eingebetteter Spiele einschränken. Es gibt keine Cloud-Speicherung und keine Synchronisierung zwischen Geräten.',
+      'Wir merken uns dein letztes Spiel, deine Spielzeit und deine Sammlung auf diesem Gerät. Ein geöffnetes Spiel bleibt beim Stöbern geladen. Level und Punktestände speichert das Spiel selbst, sofern es das unterstützt. Eingebaute werbefreie Spiele speichern immer hier und sind in Sicherungen enthalten. Safari kann den Speicher eingebetteter Spiele einschränken. Es gibt keine Cloud-Speicherung und keine Synchronisierung zwischen Geräten.',
     sessionNote:
       'Zurück zur Sammlung hält dieses Spiel geöffnet. Schließen oder Neuladen kann Fortschritt verlieren, den das Spiel noch nicht gespeichert hat.',
     switchTitle: 'Spiel wechseln?',

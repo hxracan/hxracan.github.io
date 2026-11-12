@@ -1,4 +1,5 @@
 import { queryGames } from './catalog-query';
+import { localRows } from './local-games';
 let loading;
 const load = () =>
   (loading ||= fetch(`${import.meta.env.BASE_URL}catalog/index.json`, { cache: 'no-cache' })
@@ -6,6 +7,7 @@ const load = () =>
       if (!r.ok) throw new Error('Could not load the game library.');
       return r.json();
     })
+    .then((rows) => [...localRows, ...rows])
     .catch((error) => {
       loading = null;
       throw error;

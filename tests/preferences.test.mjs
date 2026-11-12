@@ -104,3 +104,29 @@ test('German and English cover the same interface and settings', () => {
   assert.equal(relativeDate(now, 'de', now), 'Heute');
   assert.equal(relativeDate(now - 86400000, 'en', now), 'Yesterday');
 });
+
+test('built-in games and their saves survive a backup, and bad save keys are dropped', () => {
+  const record = {
+    ...game,
+    id: 'ug-snake',
+    thumbnail: '/play/snake.svg',
+    seconds: 5,
+    lastPlayed: 1,
+  };
+  assert.ok(validRecords({ 'ug-snake': record }));
+  assert.ok(!validRecords({ x: { ...record, thumbnail: 'javascript:alert(1)' } }));
+  const backup = parseBackup({
+    version: 1,
+    saved: ['ug-snake', 'ug-../x'],
+    recent: [],
+    records: { 'ug-snake': record },
+    gameSaves: {
+      'unblockedgames.save.snake': '{"best":9}',
+      'unblockedgames.theme': '"light"',
+      'unblockedgames.save.mines': 5,
+    },
+  });
+  assert.deepEqual(backup.saved, ['ug-snake']);
+  assert.equal(backup.records['ug-snake'].provider, 'unblockedgames');
+  assert.deepEqual(backup.gameSaves, { 'unblockedgames.save.snake': '{"best":9}' });
+});

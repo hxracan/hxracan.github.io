@@ -1,3 +1,5 @@
+export const providerOf = (id) =>
+  id.startsWith('gm-') ? 'GameMonetize' : id.startsWith('pk-') ? 'PlayKovo' : 'unblockedgames';
 export const unpack = (row) => ({
   id: row[0],
   title: row[1],
@@ -7,7 +9,7 @@ export const unpack = (row) => ({
     row[0].startsWith('gm-') && !row[4].startsWith('https:')
       ? `https://img.gamemonetize.com/${row[4]}/512x384.jpg`
       : row[4],
-  provider: row[0].startsWith('gm-') ? 'GameMonetize' : 'PlayKovo',
+  provider: providerOf(row[0]),
   touch: row[5] === true,
 });
 export function queryGames(
@@ -24,15 +26,15 @@ export function queryGames(
   } = {},
 ) {
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  let list = ids ? ids.map((id) => rows.find((g) => g[0] === id)).filter(Boolean) : rows;
+  const byId = ids && new Map(rows.map((g) => [g[0], g]));
+  let list = ids ? ids.map((id) => byId.get(id)).filter(Boolean) : rows;
   if (words.length)
     list = list.filter((g) =>
       words.every((w) => `${g[1]} ${g[2]} ${g[3]}`.toLowerCase().includes(w)),
     );
   if (category !== 'All games') list = list.filter((g) => g[2] === category);
   if (touchOnly) list = list.filter((g) => g[5] === true);
-  if (source)
-    list = list.filter((g) => (g[0].startsWith('gm-') ? 'GameMonetize' : 'PlayKovo') === source);
+  if (source) list = list.filter((g) => providerOf(g[0]) === source);
   if (sort === 'az') list = [...list].sort((a, b) => a[1].localeCompare(b[1]));
   if (sort === 'discovery') {
     const names = [

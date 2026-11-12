@@ -6,6 +6,12 @@ The homepage opens directly to a dense game grid, with search, categories, saved
 
 The 5 November 2026 snapshot includes 38,628 games with publisher-provided icons and embed URLs. Of those, 22,854 are listed by their publishers as mobile compatible.
 
+## Built-in ad-free games
+
+`public/play` holds small original games (Snake, Mines, Pairs, Star Forge) served from this site itself. They show no ads, and their progress is stored in this site's own local storage under `unblockedgames.save.*`, so it is included in library backups. Add one by dropping `name.html` and `name.svg` into `public/play` and listing it in `src/local-games.js`. Find them with the **Ad-free** filter.
+
+Provider games still carry their providers' ads; a static page cannot and does not strip them. Provider frames run in a sandbox that blocks them from redirecting the whole page. If a thumbnail fails to load directly, it is retried once through the wsrv.nl image proxy before a placeholder is shown. The production build adds a Content-Security-Policy.
+
 ## Development
 
 Requires Node.js 22 or later.

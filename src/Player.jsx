@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowUpRight,
   Bookmark,
+  Expand,
   ExternalLink,
   Gamepad2,
   Info,
@@ -10,6 +11,7 @@ import {
   Maximize2,
   Minimize2,
   Play,
+  RotateCw,
   X,
 } from 'lucide-react';
 import { getGame } from './catalog-client';
@@ -33,7 +35,14 @@ export default function Player({
     [failed, setFailed] = useState(false),
     [loaded, setLoaded] = useState(null),
     [expanded, setExpanded] = useState(false),
-    [confirmation, setConfirmation] = useState('');
+    [confirmation, setConfirmation] = useState(''),
+    [reloads, setReloads] = useState(0);
+  const stage = useRef(null);
+  const local = (game || selection)?.provider === 'unblockedgames';
+  const fullscreen = () =>
+    document.fullscreenElement
+      ? document.exitFullscreen()
+      : stage.current?.requestFullscreen?.().catch(() => setExpanded(true));
   const isCurrent = Boolean(selection && session && selection.id === session.game.id);
   useEffect(() => {
     if (selection) setExpanded(preferences.expandedPlayer);
@@ -119,14 +128,22 @@ export default function Player({
           <X size={22} />
         </button>
       </header>
-      <div className={`player-stage ${game?.orientation === 'portrait' ? 'portrait-game' : ''}`}>
+      <div
+        ref={stage}
+        className={`player-stage ${game?.orientation === 'portrait' ? 'portrait-game' : ''}`}
+      >
         {session && (
           <iframe
-            key={session.token}
+            key={session.token + reloads}
             hidden={!isCurrent}
             title={`${session.game.title} / ${session.game.provider}`}
             src={session.game.embedUrl}
-            allow="fullscreen; autoplay; gamepad; pointer-lock"
+            allow="fullscreen; autoplay; gamepad"
+            sandbox={
+              session.game.provider === 'unblockedgames'
+                ? undefined
+                : 'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups allow-popups-to-escape-sandbox'
+            }
             allowFullScreen
             onLoad={() => setLoaded(session.token)}
           />
@@ -151,7 +168,7 @@ export default function Player({
                 {t.play}
                 <ArrowUpRight size={20} />
               </button>
-              <p>{failed ? t.gameError : game ? t.ads : t.prepare}</p>
+              <p>{failed ? t.gameError : game ? (local ? t.adFreeNote : t.ads) : t.prepare}</p>
             </div>
           </div>
         )}
@@ -199,6 +216,18 @@ export default function Player({
             <Bookmark size={18} fill={saved ? 'currentColor' : 'none'} />
             <span>{saved ? t.savedShort : t.save}</span>
           </button>
+          {isCurrent && (
+            <button onClick={() => setReloads((value) => value + 1)} aria-label={t.reload}>
+              <RotateCw size={18} />
+              <span>{t.reload}</span>
+            </button>
+          )}
+          {document.fullscreenEnabled && (
+            <button onClick={fullscreen} aria-label={t.fullscreen}>
+              <Expand size={18} />
+              <span>{t.fullscreen}</span>
+            </button>
+          )}
           <button
             onClick={() => setExpanded((value) => !value)}
             aria-label={expanded ? t.shrink : t.expand}

@@ -1,3 +1,4 @@
+import { localGames } from './local-games';
 const worker = new Worker(new URL('./catalog.worker.js', import.meta.url), { type: 'module' });
 const pending = new Map();
 let requestId = 0;
@@ -21,6 +22,7 @@ export function queryCatalog(query) {
 }
 const details = new Map();
 export async function getGame(id) {
+  if (localGames[id]) return localGames[id];
   const key = id.startsWith('gm-') ? `gm-${Math.floor(Number(id.slice(3)) / 500)}` : 'pk';
   if (!details.has(key))
     details.set(

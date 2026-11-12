@@ -16,20 +16,36 @@ export function Brand() {
 }
 
 export function Thumbnail({ game, cover = false, eager = false, className = '' }) {
-  const [failed, setFailed] = useState(false);
-  return failed ? (
+  const sources = [
+    ...new Set(
+      [
+        cover && game.cover,
+        game.thumbnail,
+        game.thumbnail?.startsWith('https://') &&
+          `https://wsrv.nl/?w=512&url=${encodeURIComponent(game.thumbnail)}`,
+      ].filter(Boolean),
+    ),
+  ];
+  return (
+    <Picture key={sources[0]} sources={sources} game={game} eager={eager} className={className} />
+  );
+}
+
+function Picture({ sources, game, eager, className }) {
+  const [step, setStep] = useState(0);
+  return step >= sources.length ? (
     <div className={`thumbnail-fallback ${className}`}>
       <Gamepad2 size={40} />
       <span>{game.title}</span>
     </div>
   ) : (
     <img
-      src={cover ? game.cover || game.thumbnail : game.thumbnail}
+      src={sources[step]}
       alt=""
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
       className={className}
-      onError={() => setFailed(true)}
+      onError={() => setStep((value) => value + 1)}
     />
   );
 }

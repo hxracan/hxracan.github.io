@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { queryCatalog, getGame } from './catalog-client';
+import { localRows } from './local-games';
 import { LanguageContext, Brand, Thumbnail, GameCard, InfoDialog } from './UI';
 import Player from './Player';
 import Settings from './Settings';
@@ -226,6 +227,7 @@ function App() {
     );
   const launch = (game) => {
     setSession({ game, token: crypto.randomUUID() });
+    navigator.storage?.persist?.().catch(() => {});
     if (preferences.rememberHistory) {
       setRecords((previous) => startRecord(previous, game));
       setRecent((previous) => [game.id, ...previous.filter((id) => id !== game.id)].slice(0, 100));
@@ -295,6 +297,11 @@ function App() {
       preferences,
       language,
       theme,
+      gameSaves: Object.fromEntries(
+        Object.keys(localStorage)
+          .filter((key) => key.startsWith('unblockedgames.save.'))
+          .map((key) => [key, localStorage.getItem(key)]),
+      ),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -313,6 +320,7 @@ function App() {
     setTheme(data.theme);
     setLanguage(data.language);
     setTouchOnly(data.preferences.touchDefault);
+    for (const [key, text] of Object.entries(data.gameSaves)) localStorage.setItem(key, text);
   };
   const resetSettings = () => {
     setPreferences(defaultPreferences);
@@ -434,7 +442,7 @@ function App() {
             {t.recent}
           </button>
           <span className="nav-catalog">
-            {manifest ? format(manifest.count) : '38,628'} {t.results}
+            {format((manifest?.count || 38628) + localRows.length)} {t.results}
           </span>
         </nav>
       </header>
@@ -554,6 +562,16 @@ function App() {
                         {categoryName(name, language)}
                       </button>
                     ))}
+                  <button
+                    className={source === 'unblockedgames' ? 'active' : ''}
+                    aria-pressed={source === 'unblockedgames'}
+                    onClick={() => {
+                      setSource((value) => (value ? '' : 'unblockedgames'));
+                      setPage(1);
+                    }}
+                  >
+                    {t.adFree}
+                  </button>
                 </div>
                 <button
                   className={`touch-switch ${touchOnly ? 'active' : ''}`}
@@ -601,6 +619,7 @@ function App() {
                       <option value="">{t.allProviders}</option>
                       <option>GameMonetize</option>
                       <option>PlayKovo</option>
+                      <option value="unblockedgames">{t.adFree}</option>
                     </select>
                     <ChevronDown size={12} />
                   </label>

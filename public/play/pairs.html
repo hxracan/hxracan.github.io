@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<link rel="stylesheet" href="play.css">
+<title>Pairs</title>
+</head>
+<body>
+<div id="hud"></div>
+<div class="grid" id="g"></div>
+<div class="row"><button id="next" hidden>Next level</button><button id="restart">Back to level 1</button></div>
+<p class="hint">Find every pair. Your level is saved.</p>
+<script src="save.js"></script>
+<script>
+const E = ['🍎', '🚀', '🎧', '🐙', '🌵', '⚽', '🎲', '🍩', '🦊', '🌙', '🔥', '🎈', '🐢', '🍉', '⚡', '🧩', '🪐', '🐝'];
+const st = store('pairs'), el = document.getElementById('g'), hud = document.getElementById('hud'), next = document.getElementById('next');
+let p = { level: Math.max(1, Math.floor(Number(st.get({}).level)) || 1) }, cards, open, moves, lock;
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function deal() {
+  const pick = shuffle(E.slice()).slice(0, Math.min(3 + p.level, E.length));
+  cards = shuffle([...pick, ...pick]).map(e => ({ e, up: 0, done: 0 }));
+  open = []; moves = 0; lock = false; next.hidden = true;
+  el.style.gridTemplateColumns = 'repeat(' + Math.ceil(Math.sqrt(cards.length)) + ',1fr)';
+  el.replaceChildren(...cards.map((c, i) => { const b = document.createElement('button'); b.onclick = () => flip(i); return b; }));
+  draw();
+}
+function flip(i) {
+  const c = cards[i];
+  if (lock || c.up || c.done) return;
+  c.up = 1; open.push(i);
+  if (open.length == 2) {
+    moves++;
+    const [a, b] = open.map(k => cards[k]);
+    open = [];
+    if (a.e == b.e) { a.done = b.done = 1; if (cards.every(k => k.done)) { p.level++; st.set(p); next.hidden = false; } }
+    else { lock = true; setTimeout(() => { a.up = b.up = 0; lock = false; draw(); }, 700); }
+  }
+  draw();
+}
+function draw() {
+  cards.forEach((c, i) => {
+    const b = el.children[i], shown = c.up || c.done;
+    b.textContent = shown ? c.e : '';
+    b.className = shown ? 'open' : '';
+    b.setAttribute('aria-label', shown ? c.e : 'Hidden card ' + (i + 1));
+  });
+  hud.textContent = (next.hidden ? 'Level ' + p.level : 'Level cleared!') + '  ·  Moves ' + moves;
+}
+next.onclick = deal;
+document.getElementById('restart').onclick = () => { p.level = 1; st.set(p); deal(); };
+deal();
+</script>
+</body>
+</html>

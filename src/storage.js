@@ -14,6 +14,9 @@ export function writeStorage(key, value) {
     return false;
   }
 }
+export const validThumbnail = (value) =>
+  typeof value === 'string' &&
+  (value.startsWith('https://') || /^\/play\/[a-z]+\.svg$/.test(value));
 export function startRecord(records, game, now = Date.now()) {
   const previous = records[game.id];
   const record = {
@@ -48,8 +51,7 @@ export const validRecords = (value) =>
     (record) =>
       typeof record?.id === 'string' &&
       typeof record.title === 'string' &&
-      typeof record.thumbnail === 'string' &&
-      record.thumbnail.startsWith('https://') &&
+      validThumbnail(record.thumbnail) &&
       Number.isFinite(record.seconds) &&
       record.seconds >= 0 &&
       Number.isFinite(record.lastPlayed),
