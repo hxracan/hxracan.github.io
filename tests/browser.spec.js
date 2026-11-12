@@ -54,7 +54,7 @@ test('iPad settings, language, theme, touch defaults, and backups persist', asyn
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
   await expect(page.locator('.touch-switch')).toHaveAttribute('aria-checked', 'true');
   await expect(page.locator('.game-grid .game-card')).toHaveCount(48);
-  await expect(page.locator('.results-count')).toHaveText('22,854 games');
+  await expect(page.locator('.results-count')).toHaveText('22,858 games');
   await settings(page);
   await expect(page.getByRole('combobox', { name: 'Text size', exact: true })).toHaveValue('large');
   const downloaded = page.waitForEvent('download');
